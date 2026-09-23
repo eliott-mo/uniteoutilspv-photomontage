@@ -1,0 +1,28 @@
+# Dépendances du photomontage. Versions épinglées à ce qui tourne sur le poste
+# de développement au 23/09/2026 ; toute montée se vérifie sur un montage
+# complet de Gannay avant d'être retenue.
+
+numpy==2.4.4
+scipy==1.17.1            # ndimage : masques, filtres, composantes connexes
+pillow==12.2.0           # lecture des photos, composition, écriture des planches
+ezdxf==1.4.4             # lecture des plans DXF (PVcase et HelioScope)
+pyproj==3.7.2            # WGS84 -> Lambert 93
+requests==2.33.1         # MNT RGE ALTI et orthophotos IGN
+matplotlib==3.10.9       # matplotlib.path : appartenance à un polygone
+
+# Tests
+pytest==8.4.2
+
+# ---------------------------------------------------------------------------
+# BLENDER N'EST PAS UNE DÉPENDANCE PIP, et c'est important de le savoir avant
+# d'installer.
+#
+# `blender_rendu.py` s'exécute DANS Blender (`blender -b -P blender_rendu.py`),
+# qui embarque son propre Python et ses modules `bpy` et `mathutils`. Il ne
+# s'importe pas depuis cet environnement et n'a pas à l'être : le partage des
+# rôles veut que rien, ici, ne dépende de Blender.
+#
+# Version utilisée : Blender 4.5.9 LTS. Le rendu suppose `view_transform =
+# "Standard"` — AgX, le défaut de la 4.x, délave les sombres et rendrait un
+# module bleu nuit en aplat beige.
+# ---------------------------------------------------------------------------

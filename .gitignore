@@ -1,0 +1,59 @@
+# ---------------------------------------------------------------------------
+# DONNÉES DE PROJET — jamais dans le dépôt.
+#
+# `exemples/` pèse 2,9 Go et porte des pièces qui n'ont rien à faire sur
+# GitHub : les plans DXF et PDF de projets UNITe, les photos de visite de site
+# géolocalisées, les tableaux bilan, et surtout `references-HOCH/`, qui contient
+# des dossiers de permis COMPLETS d'un bureau tiers. Rien de tout cela n'est à
+# nous de publier, et rien n'aide à relire le code.
+#
+# Les jeux d'essai restent sur OneDrive, à leur place actuelle. Le dépôt ne
+# porte que le code et de quoi le faire tourner.
+# ---------------------------------------------------------------------------
+exemples/
+
+# Caches de services distants : refaits à la demande, lourds, sans valeur
+# d'historique.
+.cache_ign/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Sorties : rendus Blender, montages composés, outils de calage HTML, planches
+# de contrôle. Tout se régénère depuis le code et les entrées.
+calage/
+calage_sarnois/
+calage_sarnois_B/
+calage_sarnois_BE/
+equipements_sarnois-B/
+propositions_sarnois-B/
+demo_*.jpg
+photomontage*.png
+photomontage*.jpg
+photomontage.html
+comparaison*.jpg
+masque*.png
+rendu*.png
+montage*.jpg
+planche*.jpg
+sarnois_*.jpg
+*.blend
+*.blend1
+
+# Scènes exportées vers Blender : jusqu'à 47 Mo l'unité, entièrement dérivées
+# du plan et de la pose.
+scene_*.json
+geom.json
+
+# Textures téléchargées. Leur provenance et leur licence sont tracées dans
+# `textures/PROVENANCE.md`, qui, lui, est versionné.
+textures/*.png
+textures/*.jpg
+textures/*.zip
+
+# Environnements et outils locaux
+.venv/
+venv/
+.env
+.DS_Store
+Thumbs.db

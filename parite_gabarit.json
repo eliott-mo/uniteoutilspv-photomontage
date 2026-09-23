@@ -1,0 +1,5 @@
+{
+  "empreinte": "a94a24d83be6dd09212634e6b81d5f3bfafe4e937feae74a03c82113f4e0ffbb",
+  "verifie_le": "2026-09-17",
+  "note": "camera et solveur du gabarit compares au solveur Python sur donnees identiques : ecart max 0,0004 (m, deg ou px)"
+}

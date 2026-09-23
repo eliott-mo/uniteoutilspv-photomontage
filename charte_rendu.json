@@ -1,0 +1,119 @@
+{
+ "source": "exemples/references-HOCH (3 paires avant/apres, prestataire HOCH)",
+ "vues": {
+  "A": {
+   "pixels_touches": 369049,
+   "part_touchee": 0.044493754822530866,
+   "panneau_luminance_sur_ciel": 0.3322,
+   "panneau_rgb_median": [
+    60.0,
+    70.0,
+    73.0
+   ],
+   "panneau_ecart_type": 17.57,
+   "panneau_teinte": [
+    0.9193,
+    1.0538,
+    1.0269
+   ],
+   "panneau_rgb_sur_ciel": [
+    0.3437,
+    0.3532,
+    0.3046
+   ],
+   "brume_haut_sur_bas": 1.2663,
+   "aeration_dans_la_bande": 0.9184,
+   "ombre_rapport": 0.7656,
+   "ombre_part_du_touche": 0.0351,
+   "bord_douceur": 9.088,
+   "ciel_luminance": 202.4,
+   "ciel_rgb": [
+    179.9,
+    200.7,
+    226.8
+   ]
+  },
+  "B": {
+   "pixels_touches": 690213,
+   "part_touchee": 0.08321433738425926,
+   "panneau_luminance_sur_ciel": 0.3211,
+   "panneau_rgb_median": [
+    85.0,
+    80.0,
+    57.0
+   ],
+   "panneau_ecart_type": 30.06,
+   "panneau_teinte": [
+    1.1127,
+    1.1015,
+    0.7858
+   ],
+   "panneau_rgb_sur_ciel": [
+    0.3837,
+    0.3568,
+    0.2341
+   ],
+   "brume_haut_sur_bas": 0.7393,
+   "aeration_dans_la_bande": 0.9093,
+   "ombre_rapport": 0.8656,
+   "ombre_part_du_touche": 0.0939,
+   "bord_douceur": 5.307,
+   "ciel_luminance": 226.0,
+   "ciel_rgb": [
+    210.4,
+    224.0,
+    243.5
+   ]
+  },
+  "C": {
+   "pixels_touches": 74020,
+   "part_touchee": 0.01543626960293627,
+   "panneau_luminance_sur_ciel": 0.2727,
+   "panneau_rgb_median": [
+    61.0,
+    62.0,
+    44.0
+   ],
+   "panneau_ecart_type": 13.0,
+   "panneau_teinte": [
+    1.092,
+    1.1047,
+    0.8032
+   ],
+   "panneau_rgb_sur_ciel": [
+    0.2979,
+    0.301,
+    0.2192
+   ],
+   "brume_haut_sur_bas": 0.9157,
+   "aeration_dans_la_bande": 0.8565,
+   "ombre_rapport": 0.7036,
+   "ombre_part_du_touche": 0.0206,
+   "bord_douceur": 8.308,
+   "ciel_luminance": 207.5,
+   "ciel_rgb": [
+    207.5,
+    207.7,
+    207.4
+   ]
+  }
+ },
+ "charte": {
+  "panneau_luminance_sur_ciel": 0.3087,
+  "panneau_ecart_type": 20.21,
+  "brume_haut_sur_bas": 0.9738,
+  "aeration_dans_la_bande": 0.8947,
+  "ombre_rapport": 0.7783,
+  "bord_douceur": 7.5677,
+  "panneau_teinte": [
+   1.0413,
+   1.0867,
+   0.872
+  ],
+  "panneau_rgb_sur_ciel": [
+   0.3418,
+   0.337,
+   0.2526
+  ]
+ }
+}

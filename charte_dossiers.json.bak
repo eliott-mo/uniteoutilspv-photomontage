@@ -1,0 +1,1467 @@
+{
+ "projets": {
+  "Albestroff": {
+   "images": 3,
+   "paires": 0,
+   "mesures": {}
+  },
+  "Billancelles": {
+   "images": 12,
+   "paires": 5,
+   "mesures": {
+    "Billancelles/Vue 13 - Avant.JPG": {
+     "pixels_touches": 82023,
+     "part_touchee": 0.008139062738149672,
+     "panneau_luminance_sur_ciel": 0.4403,
+     "panneau_rgb_median": [
+      99.0,
+      100.0,
+      72.0
+     ],
+     "panneau_ecart_type": 7.86,
+     "panneau_teinte": [
+      1.0962,
+      1.0933,
+      0.8106
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.4829,
+      0.4811,
+      0.357
+     ],
+     "brume_haut_sur_bas": 0.9901,
+     "aeration_dans_la_bande": 0.7978,
+     "bord_douceur": 1.017,
+     "ciel_luminance": 204.2,
+     "ciel_rgb": [
+      204.1,
+      204.3,
+      204.1
+     ],
+     "avant": "Vue 13 - Après.jpg"
+    },
+    "Billancelles/Vue 3 - Avant.JPG": {
+     "pixels_touches": 89772,
+     "part_touchee": 0.008907988492607833,
+     "panneau_luminance_sur_ciel": 0.326,
+     "panneau_rgb_median": [
+      71.0,
+      73.0,
+      54.0
+     ],
+     "panneau_ecart_type": 18.21,
+     "panneau_teinte": [
+      1.0622,
+      1.0842,
+      0.8537
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.3486,
+      0.3551,
+      0.2752
+     ],
+     "brume_haut_sur_bas": 0.763,
+     "aeration_dans_la_bande": 0.9896,
+     "ombre_rapport": 0.7939,
+     "ombre_part_du_touche": 0.0477,
+     "bord_douceur": 0.931,
+     "ciel_luminance": 206.4,
+     "ciel_rgb": [
+      205.0,
+      205.4,
+      208.7
+     ],
+     "avant": "Vue 3 - Après.jpg"
+    },
+    "Billancelles/Vue 7 - Après.jpg": {
+     "pixels_touches": 375554,
+     "part_touchee": 0.0372658591805111,
+     "panneau_luminance_sur_ciel": 0.347,
+     "panneau_rgb_median": [
+      63.0,
+      69.0,
+      82.0
+     ],
+     "panneau_ecart_type": 17.01,
+     "panneau_teinte": [
+      0.9321,
+      0.9854,
+      1.0825
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.3256,
+      0.3432,
+      0.3717
+     ],
+     "brume_haut_sur_bas": 1.3948,
+     "aeration_dans_la_bande": 0.9192,
+     "bati_luminance_sur_ciel": 0.6607,
+     "bati_teinte": [
+      1.0441,
+      1.0251,
+      0.9308
+     ],
+     "bati_ecart_type": 11.4,
+     "bati_nb_volumes": 2,
+     "bati_pixels": 1762,
+     "ombre_rapport": 0.74,
+     "ombre_part_du_touche": 0.0303,
+     "bord_douceur": 7.432,
+     "ciel_luminance": 199.5,
+     "ciel_rgb": [
+      198.2,
+      198.8,
+      201.6
+     ],
+     "avant": "Vue 7 - Avant.JPG"
+    },
+    "Billancelles/Vue 8 - Après.jpg": {
+     "pixels_touches": 505407,
+     "part_touchee": 0.05015104642966011,
+     "panneau_luminance_sur_ciel": 0.3776,
+     "panneau_rgb_median": [
+      82.0,
+      86.0,
+      95.0
+     ],
+     "panneau_ecart_type": 25.79,
+     "panneau_teinte": [
+      0.9765,
+      0.9883,
+      1.0352
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.3686,
+      0.3736,
+      0.3906
+     ],
+     "brume_haut_sur_bas": 1.4858,
+     "aeration_dans_la_bande": 0.8502,
+     "bati_luminance_sur_ciel": 0.6472,
+     "bati_teinte": [
+      0.9834,
+      0.9992,
+      1.0173
+     ],
+     "bati_ecart_type": 16.01,
+     "bati_nb_volumes": 11,
+     "bati_pixels": 12676,
+     "ombre_rapport": 0.8214,
+     "ombre_part_du_touche": 0.1836,
+     "bord_douceur": 8.984,
+     "ciel_luminance": 213.8,
+     "ciel_rgb": [
+      213.9,
+      213.6,
+      214.0
+     ],
+     "avant": "Vue 8 - Avant.JPG"
+    },
+    "Billancelles/Vue 4 - Avant.JPG": {
+     "pixels_touches": 564507,
+     "part_touchee": 0.2722352430555556,
+     "panneau_luminance_sur_ciel": 0.3379,
+     "panneau_rgb_median": [
+      51.0,
+      61.0,
+      31.0
+     ],
+     "panneau_ecart_type": 16.05,
+     "panneau_teinte": [
+      1.0579,
+      1.2784,
+      0.6638
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.4832,
+      0.4341,
+      0.1773
+     ],
+     "brume_haut_sur_bas": 1.3152,
+     "aeration_dans_la_bande": 0.7476,
+     "bati_luminance_sur_ciel": 0.712,
+     "bati_teinte": [
+      1.1111,
+      1.2176,
+      0.6713
+     ],
+     "bati_ecart_type": 8.6,
+     "bati_nb_volumes": 2,
+     "bati_pixels": 1329,
+     "ombre_rapport": 0.7234,
+     "ombre_part_du_touche": 0.3408,
+     "bord_douceur": 3.997,
+     "ciel_luminance": 134.9,
+     "ciel_rgb": [
+      99.8,
+      134.2,
+      170.6
+     ],
+     "avant": "Vue 4 - Après.jpg"
+    }
+   }
+  },
+  "Brigueil": {
+   "images": 11,
+   "paires": 3,
+   "mesures": {
+    "Brigueil/Vue C - Après avec mesures.png": {
+     "pixels_touches": 97671,
+     "part_touchee": 0.004845899300792562,
+     "panneau_luminance_sur_ciel": 0.2008,
+     "panneau_rgb_median": [
+      55.0,
+      66.0,
+      22.0
+     ],
+     "panneau_ecart_type": 27.11,
+     "panneau_teinte": [
+      1.1348,
+      1.2829,
+      0.5824
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.2283,
+      0.2575,
+      0.1169
+     ],
+     "brume_haut_sur_bas": 1.1533,
+     "aeration_dans_la_bande": 0.8681,
+     "ombre_rapport": 0.6395,
+     "ombre_part_du_touche": 0.0435,
+     "bord_douceur": 6.366,
+     "ciel_luminance": 254.8,
+     "ciel_rgb": [
+      254.4,
+      255.0,
+      255.0
+     ],
+     "avant": "Vue C - Après sans mesures.png"
+    },
+    "Brigueil/Vue A - Après sans mesures.jpg": {
+     "pixels_touches": 941023,
+     "part_touchee": 0.0466883998088452,
+     "panneau_luminance_sur_ciel": 0.2214,
+     "panneau_rgb_median": [
+      49.0,
+      78.0,
+      34.0
+     ],
+     "panneau_ecart_type": 9.24,
+     "panneau_teinte": [
+      0.9218,
+      1.4488,
+      0.6294
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.2254,
+      0.3113,
+      0.1309
+     ],
+     "brume_haut_sur_bas": 1.0078,
+     "aeration_dans_la_bande": 0.8159,
+     "bati_luminance_sur_ciel": 0.5265,
+     "bati_teinte": [
+      0.9192,
+      1.0072,
+      1.0736
+     ],
+     "bati_ecart_type": 11.63,
+     "bati_nb_volumes": 10,
+     "bati_pixels": 9536,
+     "ombre_rapport": 0.7539,
+     "ombre_part_du_touche": 0.0171,
+     "bord_douceur": 3.874,
+     "ciel_luminance": 238.9,
+     "ciel_rgb": [
+      216.3,
+      246.2,
+      254.3
+     ],
+     "avant": "Vue A - Avant.jpg"
+    }
+   }
+  },
+  "Crépand": {
+   "images": 6,
+   "paires": 2,
+   "mesures": {
+    "Crépand/Vue A -  Avant.jpg": {
+     "pixels_touches": 1393363,
+     "part_touchee": 0.1142778243627698,
+     "panneau_luminance_sur_ciel": 0.2569,
+     "panneau_rgb_median": [
+      43.0,
+      59.0,
+      63.0
+     ],
+     "panneau_ecart_type": 18.53,
+     "panneau_teinte": [
+      0.8314,
+      1.0991,
+      1.0695
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.2277,
+      0.2878,
+      0.2543
+     ],
+     "brume_haut_sur_bas": 1.0632,
+     "aeration_dans_la_bande": 0.9292,
+     "bati_luminance_sur_ciel": 0.7079,
+     "bati_teinte": [
+      0.9907,
+      1.0281,
+      0.9813
+     ],
+     "bati_ecart_type": 26.3,
+     "bati_nb_volumes": 4,
+     "bati_pixels": 5676,
+     "ombre_rapport": 0.747,
+     "ombre_part_du_touche": 0.0463,
+     "bord_douceur": 4.095,
+     "ciel_luminance": 227.2,
+     "ciel_rgb": [
+      213.1,
+      223.0,
+      245.6
+     ],
+     "avant": "Vue A - Après.jpg"
+    },
+    "Crépand/Vue C - Après.jpg": {
+     "pixels_touches": 2807962,
+     "part_touchee": 0.33853708526234566,
+     "panneau_luminance_sur_ciel": 0.2786,
+     "panneau_rgb_median": [
+      57.0,
+      61.0,
+      43.0
+     ],
+     "panneau_ecart_type": 28.07,
+     "panneau_teinte": [
+      1.0677,
+      1.1287,
+      0.8036
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.2993,
+      0.308,
+      0.2272
+     ],
+     "brume_haut_sur_bas": 0.6098,
+     "aeration_dans_la_bande": 0.9521,
+     "bati_luminance_sur_ciel": 0.6589,
+     "bati_teinte": [
+      1.0772,
+      1.034,
+      0.8888
+     ],
+     "bati_ecart_type": 23.56,
+     "bati_nb_volumes": 8,
+     "bati_pixels": 12236,
+     "ombre_rapport": 0.7167,
+     "ombre_part_du_touche": 0.1273,
+     "bord_douceur": 6.441,
+     "ciel_luminance": 186.2,
+     "ciel_rgb": [
+      185.0,
+      190.1,
+      183.4
+     ],
+     "avant": "Vue C - Avant.jpg"
+    }
+   }
+  },
+  "Epeigné": {
+   "images": 9,
+   "paires": 2,
+   "mesures": {
+    "Epeigné/Vue B - Après.jpg": {
+     "pixels_touches": 39392,
+     "part_touchee": 0.004749228395061728,
+     "panneau_luminance_sur_ciel": 0.4144,
+     "panneau_rgb_median": [
+      94.0,
+      107.0,
+      78.0
+     ],
+     "panneau_ecart_type": 19.17,
+     "panneau_teinte": [
+      1.0301,
+      1.1704,
+      0.7996
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.4685,
+      0.4847,
+      0.3044
+     ],
+     "brume_haut_sur_bas": 1.0558,
+     "aeration_dans_la_bande": 0.9972,
+     "ombre_rapport": 0.7947,
+     "ombre_part_du_touche": 0.2304,
+     "bord_douceur": 5.784,
+     "ciel_luminance": 221.5,
+     "ciel_rgb": [
+      201.8,
+      221.7,
+      241.1
+     ],
+     "avant": "Vue B - Avant.jpg"
+    },
+    "Epeigné/Vue A - Après.jpg": {
+     "pixels_touches": 505261,
+     "part_touchee": 0.060915919174382716,
+     "panneau_luminance_sur_ciel": 0.3272,
+     "panneau_rgb_median": [
+      72.0,
+      75.0,
+      59.0
+     ],
+     "panneau_ecart_type": 21.71,
+     "panneau_teinte": [
+      1.0341,
+      1.0929,
+      0.873
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.3806,
+      0.3595,
+      0.2559
+     ],
+     "brume_haut_sur_bas": 1.2062,
+     "aeration_dans_la_bande": 0.9693,
+     "bati_luminance_sur_ciel": 0.7855,
+     "bati_teinte": [
+      1.0615,
+      1.0198,
+      0.9187
+     ],
+     "bati_ecart_type": 16.36,
+     "bati_nb_volumes": 4,
+     "bati_pixels": 8456,
+     "ombre_rapport": 0.7181,
+     "ombre_part_du_touche": 0.1169,
+     "bord_douceur": 16.605,
+     "ciel_luminance": 209.8,
+     "ciel_rgb": [
+      186.5,
+      208.7,
+      234.2
+     ],
+     "avant": "Vue A - Avant.jpg"
+    }
+   }
+  },
+  "La-Ville-au-Bois": {
+   "images": 9,
+   "paires": 2,
+   "mesures": {
+    "La-Ville-au-Bois/Vue A -Après avec mesures.jpg": {
+     "pixels_touches": 1507055,
+     "part_touchee": 0.09397929612512622,
+     "panneau_luminance_sur_ciel": 0.2441,
+     "panneau_rgb_median": [
+      46.0,
+      55.0,
+      25.0
+     ],
+     "panneau_ecart_type": 19.69,
+     "panneau_teinte": [
+      1.0921,
+      1.2776,
+      0.6303
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.2834,
+      0.3147,
+      0.144
+     ],
+     "brume_haut_sur_bas": 1.381,
+     "aeration_dans_la_bande": 0.8211,
+     "ombre_rapport": 0.787,
+     "ombre_part_du_touche": 0.0301,
+     "bord_douceur": 3.314,
+     "ciel_luminance": 174.7,
+     "ciel_rgb": [
+      164.4,
+      173.1,
+      186.6
+     ],
+     "avant": "Vue A -Après.jpg"
+    },
+    "La-Ville-au-Bois/Vue C - Avant.JPG": {
+     "pixels_touches": 981790,
+     "part_touchee": 0.10908777777777778,
+     "panneau_luminance_sur_ciel": 0.3294,
+     "panneau_rgb_median": [
+      75.0,
+      81.0,
+      43.0
+     ],
+     "panneau_ecart_type": 17.46,
+     "panneau_teinte": [
+      1.1136,
+      1.2063,
+      0.6802
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.4017,
+      0.397,
+      0.2063
+     ],
+     "brume_haut_sur_bas": 1.4615,
+     "aeration_dans_la_bande": 0.7817,
+     "ombre_rapport": 0.7715,
+     "ombre_part_du_touche": 0.0248,
+     "bord_douceur": 5.095,
+     "ciel_luminance": 201.2,
+     "ciel_rgb": [
+      183.7,
+      201.4,
+      218.6
+     ],
+     "avant": "Vue C - Après.jpg"
+    }
+   }
+  },
+  "Massay": {
+   "images": 6,
+   "paires": 2,
+   "mesures": {
+    "Massay/Vue 2-après sans mesures.jpg": {
+     "pixels_touches": 1538845,
+     "part_touchee": 0.0466469555597374,
+     "panneau_luminance_sur_ciel": 0.1962,
+     "panneau_rgb_median": [
+      38.0,
+      43.0,
+      38.0
+     ],
+     "panneau_ecart_type": 20.09,
+     "panneau_teinte": [
+      0.8962,
+      1.0131,
+      1.0907
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.1809,
+      0.1958,
+      0.2115
+     ],
+     "brume_haut_sur_bas": 1.9835,
+     "aeration_dans_la_bande": 0.8411,
+     "ombre_rapport": 0.7833,
+     "ombre_part_du_touche": 0.0534,
+     "bord_douceur": 6.239,
+     "ciel_luminance": 213.5,
+     "ciel_rgb": [
+      207.5,
+      216.8,
+      216.0
+     ],
+     "avant": "Vue 2-Avant.jpg"
+    },
+    "Massay/Vue 1-après avec mesures.jpg": {
+     "pixels_touches": 2972800,
+     "part_touchee": 0.09011438415694065,
+     "panneau_luminance_sur_ciel": 0.0888,
+     "panneau_rgb_median": [
+      17.0,
+      18.0,
+      8.0
+     ],
+     "panneau_ecart_type": 16.3,
+     "panneau_teinte": [
+      1.1519,
+      1.2027,
+      0.6454
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.1059,
+      0.1065,
+      0.0555
+     ],
+     "brume_haut_sur_bas": 2.3349,
+     "aeration_dans_la_bande": 0.866,
+     "ombre_rapport": 0.5783,
+     "ombre_part_du_touche": 0.0409,
+     "bord_douceur": 7.343,
+     "ciel_luminance": 211.9,
+     "ciel_rgb": [
+      204.5,
+      212.4,
+      218.8
+     ],
+     "avant": "Vue 1-après sans mesures.jpg"
+    }
+   }
+  },
+  "Moulin sous Touvent": {
+   "images": 5,
+   "paires": 2,
+   "mesures": {
+    "Moulin sous Touvent/Vue C - Après.jpg": {
+     "pixels_touches": 633467,
+     "part_touchee": 0.039502727357989806,
+     "panneau_luminance_sur_ciel": 0.298,
+     "panneau_rgb_median": [
+      46.0,
+      67.0,
+      43.0
+     ],
+     "panneau_ecart_type": 22.68,
+     "panneau_teinte": [
+      0.8725,
+      1.2547,
+      0.8728
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.421,
+      0.3753,
+      0.1876
+     ],
+     "brume_haut_sur_bas": 0.747,
+     "aeration_dans_la_bande": 0.873,
+     "ombre_rapport": 0.6374,
+     "ombre_part_du_touche": 0.0823,
+     "bord_douceur": 6.987,
+     "ciel_luminance": 170.0,
+     "ciel_rgb": [
+      105.0,
+      169.3,
+      235.6
+     ],
+     "avant": "Vue B - Avant.jpg"
+    },
+    "Moulin sous Touvent/Vue B - Après.jpg": {
+     "pixels_touches": 3024962,
+     "part_touchee": 0.18863531826327112,
+     "panneau_luminance_sur_ciel": 0.3485,
+     "panneau_rgb_median": [
+      56.0,
+      81.0,
+      37.0
+     ],
+     "panneau_ecart_type": 20.77,
+     "panneau_teinte": [
+      0.9542,
+      1.3822,
+      0.6636
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.6839,
+      0.4769,
+      0.1538
+     ],
+     "brume_haut_sur_bas": 1.0168,
+     "aeration_dans_la_bande": 0.9507,
+     "bati_luminance_sur_ciel": 1.0291,
+     "bati_teinte": [
+      0.7644,
+      1.0436,
+      1.192
+     ],
+     "bati_ecart_type": 33.29,
+     "bati_nb_volumes": 84,
+     "bati_pixels": 396190,
+     "ombre_rapport": 0.6664,
+     "ombre_part_du_touche": 0.3098,
+     "bord_douceur": 9.055,
+     "ciel_luminance": 158.7,
+     "ciel_rgb": [
+      77.1,
+      160.2,
+      238.6
+     ],
+     "avant": "Vue A - Avant.jpg"
+    }
+   }
+  },
+  "Moulin sur Céphons": {
+   "images": 6,
+   "paires": 1,
+   "mesures": {
+    "Moulin sur Céphons/PDV_04_haies_VF.jpg": {
+     "pixels_touches": 447906,
+     "part_touchee": 0.027646475751143575,
+     "panneau_luminance_sur_ciel": 0.2277,
+     "panneau_rgb_median": [
+      50.0,
+      64.0,
+      39.0
+     ],
+     "panneau_ecart_type": 23.62,
+     "panneau_teinte": [
+      0.9953,
+      1.2316,
+      0.7731
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.2369,
+      0.2792,
+      0.1695
+     ],
+     "brume_haut_sur_bas": 1.4231,
+     "aeration_dans_la_bande": 0.8264,
+     "ombre_rapport": 0.7674,
+     "ombre_part_du_touche": 0.0671,
+     "bord_douceur": 9.874,
+     "ciel_luminance": 242.2,
+     "ciel_rgb": [
+      231.8,
+      243.3,
+      251.5
+     ],
+     "avant": "PDV_04_VF.jpg"
+    }
+   }
+  },
+  "Pontivy": {
+   "images": 3,
+   "paires": 1,
+   "mesures": {
+    "Pontivy/Vue_1 - Avant.jpeg": {
+     "pixels_touches": 1020254,
+     "part_touchee": 0.08367697966532292,
+     "panneau_luminance_sur_ciel": 0.2677,
+     "panneau_rgb_median": [
+      59.0,
+      71.0,
+      36.0
+     ],
+     "panneau_ecart_type": 24.06,
+     "panneau_teinte": [
+      1.082,
+      1.2629,
+      0.6551
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.3035,
+      0.3469,
+      0.1638
+     ],
+     "brume_haut_sur_bas": 0.5355,
+     "aeration_dans_la_bande": 0.891,
+     "ombre_rapport": 0.6594,
+     "ombre_part_du_touche": 0.0526,
+     "bord_douceur": 8.802,
+     "ciel_luminance": 208.4,
+     "ciel_rgb": [
+      198.9,
+      203.1,
+      223.1
+     ],
+     "avant": "Vue_1 - Après sans mesures.jpg"
+    }
+   }
+  },
+  "Ruffec 3": {
+   "images": 4,
+   "paires": 2,
+   "mesures": {
+    "Ruffec 3/Vue B - Après.jpg": {
+     "pixels_touches": 386342,
+     "part_touchee": 0.04657865547839506,
+     "panneau_luminance_sur_ciel": 0.3304,
+     "panneau_rgb_median": [
+      73.0,
+      74.0,
+      64.0
+     ],
+     "panneau_ecart_type": 18.12,
+     "panneau_teinte": [
+      1.0264,
+      1.0457,
+      0.9278
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.382,
+      0.3436,
+      0.2771
+     ],
+     "brume_haut_sur_bas": 1.2101,
+     "aeration_dans_la_bande": 0.9182,
+     "bati_luminance_sur_ciel": 0.5133,
+     "bati_teinte": [
+      0.9944,
+      1.009,
+      0.9965
+     ],
+     "bati_ecart_type": 15.59,
+     "bati_nb_volumes": 5,
+     "bati_pixels": 5094,
+     "ombre_rapport": 0.7842,
+     "ombre_part_du_touche": 0.0988,
+     "bord_douceur": 6.891,
+     "ciel_luminance": 226.2,
+     "ciel_rgb": [
+      200.9,
+      227.5,
+      250.3
+     ],
+     "avant": "Vue B - Avant.jpg"
+    },
+    "Ruffec 3/Vue A - Avant.jpg": {
+     "pixels_touches": 984048,
+     "part_touchee": 0.11864004629629629,
+     "panneau_luminance_sur_ciel": 0.2301,
+     "panneau_rgb_median": [
+      39.0,
+      58.0,
+      50.0
+     ],
+     "panneau_ecart_type": 16.29,
+     "panneau_teinte": [
+      0.8439,
+      1.1639,
+      0.9921
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.2087,
+      0.2639,
+      0.2164
+     ],
+     "brume_haut_sur_bas": 1.0847,
+     "aeration_dans_la_bande": 0.8976,
+     "bati_luminance_sur_ciel": 0.7492,
+     "bati_teinte": [
+      1.1002,
+      1.1027,
+      0.7971
+     ],
+     "bati_ecart_type": 27.48,
+     "bati_nb_volumes": 14,
+     "bati_pixels": 185331,
+     "ombre_rapport": 0.8096,
+     "ombre_part_du_touche": 0.0428,
+     "bord_douceur": 4.474,
+     "ciel_luminance": 227.3,
+     "ciel_rgb": [
+      211.5,
+      230.7,
+      239.8
+     ],
+     "avant": "Vue A - Après.jpg"
+    }
+   }
+  },
+  "Saint-Etienne-ss-Barbuise": {
+   "images": 25,
+   "paires": 7,
+   "mesures": {
+    "Saint-Etienne-ss-Barbuise/Vue D - Après.png": {
+     "pixels_touches": 37001,
+     "part_touchee": 0.004460961612654321,
+     "panneau_luminance_sur_ciel": 0.3524,
+     "panneau_rgb_median": [
+      77.0,
+      78.0,
+      77.0
+     ],
+     "panneau_ecart_type": 8.21,
+     "panneau_teinte": [
+      0.9945,
+      1.008,
+      0.9975
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.3971,
+      0.3503,
+      0.3186
+     ],
+     "brume_haut_sur_bas": 1.0488,
+     "aeration_dans_la_bande": 0.7661,
+     "bord_douceur": 5.617,
+     "ciel_luminance": 221.4,
+     "ciel_rgb": [
+      195.4,
+      224.5,
+      244.2
+     ],
+     "avant": "Vue D - Avant.jpg"
+    },
+    "Saint-Etienne-ss-Barbuise/Vue A - Après.png": {
+     "pixels_touches": 43535,
+     "part_touchee": 0.019684603235536554,
+     "panneau_luminance_sur_ciel": 0.2424,
+     "panneau_rgb_median": [
+      42.0,
+      44.0,
+      46.0
+     ],
+     "panneau_ecart_type": 16.69,
+     "panneau_teinte": [
+      0.9889,
+      1.0084,
+      1.0026
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.2513,
+      0.2419,
+      0.2347
+     ],
+     "brume_haut_sur_bas": 1.5837,
+     "aeration_dans_la_bande": 0.9038,
+     "ombre_rapport": 0.7191,
+     "ombre_part_du_touche": 0.0871,
+     "bord_douceur": 5.552,
+     "ciel_luminance": 185.8,
+     "ciel_rgb": [
+      177.2,
+      187.7,
+      192.4
+     ],
+     "avant": "Vue A - Avant.png"
+    },
+    "Saint-Etienne-ss-Barbuise/Vue A V2 - Après.jpg": {
+     "pixels_touches": 43010,
+     "part_touchee": 0.022401041666666666,
+     "panneau_luminance_sur_ciel": 0.246,
+     "panneau_rgb_median": [
+      44.0,
+      48.0,
+      43.0
+     ],
+     "panneau_ecart_type": 16.14,
+     "panneau_teinte": [
+      0.9718,
+      1.071,
+      0.9571
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.2505,
+      0.2613,
+      0.227
+     ],
+     "brume_haut_sur_bas": 1.2525,
+     "aeration_dans_la_bande": 0.909,
+     "ombre_rapport": 0.7391,
+     "ombre_part_du_touche": 0.0538,
+     "bord_douceur": 7.17,
+     "ciel_luminance": 195.4,
+     "ciel_rgb": [
+      186.5,
+      197.0,
+      202.7
+     ],
+     "avant": "Vue A V2 - Avant.jpg"
+    },
+    "Saint-Etienne-ss-Barbuise/Vue B - Après.png": {
+     "pixels_touches": 2549256,
+     "part_touchee": 0.20907934933232553,
+     "panneau_luminance_sur_ciel": 0.1942,
+     "panneau_rgb_median": [
+      35.0,
+      43.0,
+      32.0
+     ],
+     "panneau_ecart_type": 16.15,
+     "panneau_teinte": [
+      0.9634,
+      1.1019,
+      0.9347
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.211,
+      0.2136,
+      0.1633
+     ],
+     "brume_haut_sur_bas": 0.8956,
+     "aeration_dans_la_bande": 0.5372,
+     "ombre_rapport": 0.7559,
+     "ombre_part_du_touche": 0.0232,
+     "bord_douceur": 5.401,
+     "ciel_luminance": 198.0,
+     "ciel_rgb": [
+      175.6,
+      198.4,
+      220.1
+     ],
+     "avant": "Vue B - Avant.jpeg"
+    },
+    "Saint-Etienne-ss-Barbuise/Vue C-Après-v2.png": {
+     "pixels_touches": 3632078,
+     "part_touchee": 0.29788789551314354,
+     "panneau_luminance_sur_ciel": 0.2104,
+     "panneau_rgb_median": [
+      36.0,
+      38.0,
+      36.0
+     ],
+     "panneau_ecart_type": 21.71,
+     "panneau_teinte": [
+      0.9733,
+      1.0669,
+      0.9598
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.2584,
+      0.224,
+      0.1676
+     ],
+     "brume_haut_sur_bas": 1.0804,
+     "aeration_dans_la_bande": 0.7499,
+     "ombre_rapport": 0.7106,
+     "ombre_part_du_touche": 0.0553,
+     "bord_douceur": 8.954,
+     "ciel_luminance": 198.4,
+     "ciel_rgb": [
+      157.2,
+      198.9,
+      239.1
+     ],
+     "avant": "Vue C - Avant.jpg"
+    }
+   }
+  },
+  "Saint-Hilaire-le-Vouhis": {
+   "images": 19,
+   "paires": 6,
+   "mesures": {
+    "Saint-Hilaire-le-Vouhis/Vue D - Après.png": {
+     "pixels_touches": 48446,
+     "part_touchee": 0.005840808256172839,
+     "panneau_luminance_sur_ciel": 0.3632,
+     "panneau_rgb_median": [
+      66.0,
+      67.0,
+      62.0
+     ],
+     "panneau_ecart_type": 14.89,
+     "panneau_teinte": [
+      1.0285,
+      1.0439,
+      0.9276
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.4565,
+      0.3845,
+      0.2817
+     ],
+     "brume_haut_sur_bas": 0.8061,
+     "aeration_dans_la_bande": 0.9199,
+     "ombre_rapport": 0.8263,
+     "ombre_part_du_touche": 0.0351,
+     "bord_douceur": 3.928,
+     "ciel_luminance": 173.2,
+     "ciel_rgb": [
+      141.7,
+      170.8,
+      207.1
+     ],
+     "avant": "Vue D - Après avec mesures.png"
+    },
+    "Saint-Hilaire-le-Vouhis/Vue H - Après.jpg": {
+     "pixels_touches": 83615,
+     "part_touchee": 0.016037247305228434,
+     "panneau_luminance_sur_ciel": 0.2659,
+     "panneau_rgb_median": [
+      49.0,
+      55.0,
+      45.0
+     ],
+     "panneau_ecart_type": 17.71,
+     "panneau_teinte": [
+      0.9865,
+      1.0826,
+      0.9309
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.2819,
+      0.2864,
+      0.2326
+     ],
+     "brume_haut_sur_bas": 0.95,
+     "aeration_dans_la_bande": 0.9131,
+     "ombre_rapport": 0.8016,
+     "ombre_part_du_touche": 0.0773,
+     "bord_douceur": 3.473,
+     "ciel_luminance": 198.6,
+     "ciel_rgb": [
+      184.8,
+      199.6,
+      211.3
+     ],
+     "avant": "Vue H - Avant.jpg"
+    },
+    "Saint-Hilaire-le-Vouhis/Vue F - Après.png": {
+     "pixels_touches": 490754,
+     "part_touchee": 0.06519863000959206,
+     "panneau_luminance_sur_ciel": 0.248,
+     "panneau_rgb_median": [
+      58.0,
+      61.0,
+      48.0
+     ],
+     "panneau_ecart_type": 19.35,
+     "panneau_teinte": [
+      1.0235,
+      1.051,
+      0.9255
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.2693,
+      0.2572,
+      0.2199
+     ],
+     "brume_haut_sur_bas": 1.1721,
+     "aeration_dans_la_bande": 0.9001,
+     "bati_luminance_sur_ciel": 0.9721,
+     "bati_teinte": [
+      0.9116,
+      1.0209,
+      1.0675
+     ],
+     "bati_ecart_type": 8.19,
+     "bati_nb_volumes": 4,
+     "bati_pixels": 24776,
+     "ombre_rapport": 0.7684,
+     "ombre_part_du_touche": 0.0447,
+     "bord_douceur": 7.145,
+     "ciel_luminance": 222.0,
+     "ciel_rgb": [
+      209.2,
+      225.0,
+      231.7
+     ],
+     "avant": "Vue F - Avant.jpg"
+    },
+    "Saint-Hilaire-le-Vouhis/Vue C - Après.png": {
+     "pixels_touches": 2619955,
+     "part_touchee": 0.31587034625771604,
+     "panneau_luminance_sur_ciel": 0.1647,
+     "panneau_rgb_median": [
+      26.0,
+      32.0,
+      22.0
+     ],
+     "panneau_ecart_type": 21.39,
+     "panneau_teinte": [
+      0.9966,
+      1.146,
+      0.8574
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.1805,
+      0.1891,
+      0.1292
+     ],
+     "brume_haut_sur_bas": 0.8773,
+     "aeration_dans_la_bande": 0.7296,
+     "bati_luminance_sur_ciel": 0.6813,
+     "bati_teinte": [
+      1.0916,
+      1.047,
+      0.8614
+     ],
+     "bati_ecart_type": 24.49,
+     "bati_nb_volumes": 8,
+     "bati_pixels": 25296,
+     "ombre_rapport": 0.6486,
+     "ombre_part_du_touche": 0.028,
+     "bord_douceur": 16.469,
+     "ciel_luminance": 197.7,
+     "ciel_rgb": [
+      179.8,
+      197.3,
+      216.0
+     ],
+     "avant": "Vue C - Avant.jpg"
+    },
+    "Saint-Hilaire-le-Vouhis/Vue B - Après.png": {
+     "pixels_touches": 3585476,
+     "part_touchee": 0.2987896666666667,
+     "panneau_luminance_sur_ciel": 0.2186,
+     "panneau_rgb_median": [
+      35.0,
+      38.0,
+      35.0
+     ],
+     "panneau_ecart_type": 21.38,
+     "panneau_teinte": [
+      1.0368,
+      1.077,
+      0.8862
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.2381,
+      0.237,
+      0.1836
+     ],
+     "brume_haut_sur_bas": 0.7251,
+     "aeration_dans_la_bande": 0.81,
+     "ombre_rapport": 0.6574,
+     "ombre_part_du_touche": 0.1227,
+     "bord_douceur": 7.819,
+     "ciel_luminance": 193.7,
+     "ciel_rgb": [
+      184.4,
+      192.4,
+      204.4
+     ],
+     "avant": "Vue B - Avant.jpg"
+    }
+   }
+  },
+  "Saint-Lubin": {
+   "images": 8,
+   "paires": 2,
+   "mesures": {
+    "Saint-Lubin/Vue B - Après avec mesures.jpg": {
+     "pixels_touches": 14947,
+     "part_touchee": 0.007208236882716049,
+     "panneau_luminance_sur_ciel": 0.3814,
+     "panneau_rgb_median": [
+      98.0,
+      88.0,
+      58.0
+     ],
+     "panneau_ecart_type": 10.48,
+     "panneau_teinte": [
+      1.2015,
+      1.0791,
+      0.7194
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.4754,
+      0.4111,
+      0.2651
+     ],
+     "brume_haut_sur_bas": 0.9405,
+     "aeration_dans_la_bande": 0.8474,
+     "bord_douceur": 3.732,
+     "ciel_luminance": 213.1,
+     "ciel_rgb": [
+      205.4,
+      213.4,
+      220.6
+     ],
+     "avant": "Vue B - Après.jpg"
+    },
+    "Saint-Lubin/Vue A - Après.jpg": {
+     "pixels_touches": 30405,
+     "part_touchee": 0.014662905092592592,
+     "panneau_luminance_sur_ciel": 0.4057,
+     "panneau_rgb_median": [
+      104.0,
+      103.0,
+      100.0
+     ],
+     "panneau_ecart_type": 21.35,
+     "panneau_teinte": [
+      1.0113,
+      1.0059,
+      0.9828
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.4143,
+      0.4061,
+      0.3967
+     ],
+     "brume_haut_sur_bas": 1.0546,
+     "aeration_dans_la_bande": 0.8368,
+     "ombre_rapport": 0.7466,
+     "ombre_part_du_touche": 0.085,
+     "bord_douceur": 13.305,
+     "ciel_luminance": 253.1,
+     "ciel_rgb": [
+      250.6,
+      254.2,
+      254.3
+     ],
+     "avant": "Vue A - Avant.jpg"
+    }
+   }
+  },
+  "Sougy": {
+   "images": 4,
+   "paires": 1,
+   "mesures": {
+    "Sougy/Vue B - Après.jpg": {
+     "pixels_touches": 994734,
+     "part_touchee": 0.1721102658439153,
+     "panneau_luminance_sur_ciel": 0.1941,
+     "panneau_rgb_median": [
+      35.0,
+      43.0,
+      44.0
+     ],
+     "panneau_ecart_type": 25.33,
+     "panneau_teinte": [
+      0.9297,
+      1.0466,
+      1.0237
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.1888,
+      0.2043,
+      0.1893
+     ],
+     "brume_haut_sur_bas": 1.2241,
+     "aeration_dans_la_bande": 0.9309,
+     "bati_luminance_sur_ciel": 0.5899,
+     "bati_teinte": [
+      1.0696,
+      1.0381,
+      0.8924
+     ],
+     "bati_ecart_type": 11.03,
+     "bati_nb_volumes": 3,
+     "bati_pixels": 4366,
+     "ombre_rapport": 0.7849,
+     "ombre_part_du_touche": 0.0784,
+     "bord_douceur": 9.349,
+     "ciel_luminance": 216.2,
+     "ciel_rgb": [
+      206.7,
+      215.0,
+      227.0
+     ],
+     "avant": "Vue B - Avant.jpg"
+    }
+   }
+  },
+  "SPLE": {
+   "images": 8,
+   "paires": 3,
+   "mesures": {
+    "SPLE/Vue B - avec mesures.png": {
+     "pixels_touches": 98390,
+     "part_touchee": 0.0040995833333333336,
+     "panneau_luminance_sur_ciel": 0.4437,
+     "panneau_rgb_median": [
+      103.0,
+      105.0,
+      80.0
+     ],
+     "panneau_ecart_type": 13.6,
+     "panneau_teinte": [
+      1.0654,
+      1.0893,
+      0.8453
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.549,
+      0.4792,
+      0.3318
+     ],
+     "brume_haut_sur_bas": 1.1183,
+     "aeration_dans_la_bande": 0.9672,
+     "ombre_rapport": 0.8161,
+     "ombre_part_du_touche": 0.3732,
+     "bord_douceur": 10.295,
+     "ciel_luminance": 219.2,
+     "ciel_rgb": [
+      188.7,
+      221.0,
+      247.7
+     ],
+     "avant": "Vue B - sans mesures.png"
+    },
+    "SPLE/Vue C-apres.png": {
+     "pixels_touches": 43191,
+     "part_touchee": 0.005207248263888889,
+     "panneau_luminance_sur_ciel": 0.2634,
+     "panneau_rgb_median": [
+      48.0,
+      53.0,
+      46.0
+     ],
+     "panneau_ecart_type": 17.08,
+     "panneau_teinte": [
+      0.9654,
+      1.1017,
+      0.9328
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.2739,
+      0.2913,
+      0.2286
+     ],
+     "brume_haut_sur_bas": 1.3564,
+     "aeration_dans_la_bande": 0.9963,
+     "ombre_rapport": 0.7408,
+     "ombre_part_du_touche": 0.0589,
+     "bord_douceur": 5.077,
+     "ciel_luminance": 200.4,
+     "ciel_rgb": [
+      186.0,
+      199.7,
+      215.5
+     ],
+     "avant": "Vue C-avant.jpg"
+    },
+    "SPLE/Vue A - sans mesures.png": {
+     "pixels_touches": 5141318,
+     "part_touchee": 0.21422158333333333,
+     "panneau_luminance_sur_ciel": 0.1994,
+     "panneau_rgb_median": [
+      43.0,
+      48.0,
+      35.0
+     ],
+     "panneau_ecart_type": 24.32,
+     "panneau_teinte": [
+      1.0114,
+      1.1175,
+      0.8711
+     ],
+     "panneau_rgb_sur_ciel": [
+      0.2389,
+      0.2232,
+      0.15
+     ],
+     "brume_haut_sur_bas": 0.6072,
+     "aeration_dans_la_bande": 0.7545,
+     "bati_luminance_sur_ciel": 0.7994,
+     "bati_teinte": [
+      1.0741,
+      1.0261,
+      0.8998
+     ],
+     "bati_ecart_type": 22.51,
+     "bati_nb_volumes": 121,
+     "bati_pixels": 538592,
+     "ombre_rapport": 0.6869,
+     "ombre_part_du_touche": 0.0296,
+     "bord_douceur": 8.323,
+     "ciel_luminance": 213.3,
+     "ciel_rgb": [
+      180.1,
+      213.0,
+      246.9
+     ],
+     "avant": "Vue A - Avant.JPG"
+    }
+   }
+  }
+ },
+ "n_paires": 37,
+ "charte": {
+  "panneau_luminance_sur_ciel": 0.2659,
+  "panneau_ecart_type": 18.53,
+  "brume_haut_sur_bas": 1.0804,
+  "aeration_dans_la_bande": 0.873,
+  "ombre_rapport": 0.7468,
+  "bord_douceur": 6.441,
+  "bati_luminance_sur_ciel": 0.6589,
+  "bati_ecart_type": 15.59,
+  "bati_teinte": [
+   1.0441,
+   1.0209,
+   0.9308
+  ],
+  "panneau_teinte": [
+   1.0113,
+   1.0933,
+   0.873
+  ],
+  "panneau_rgb_sur_ciel": [
+   0.2834,
+   0.3113,
+   0.2199
+  ]
+ },
+ "charte_bati_note": "mediane sur 9 vues retenues ; ecartees : trop de volumes (clotures ou structures prises pour des batiments) ou paire inversee"
+}

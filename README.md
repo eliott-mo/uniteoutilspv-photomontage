@@ -152,6 +152,35 @@ pas le coller dans le shell.
 
 ---
 
+## Livraison vers le dossier DP
+
+La pièce **DP 6 — Insertions paysagères** de `generateur-dp` compose une planche
+par point de vue à partir de deux ou trois images : l'état actuel, le projet, et le
+projet avec les mesures paysagères. `livrer_dp6.py` les y dépose.
+
+```bash
+python livrer_dp6.py exemples/casxcas/pose_4.json     exemples/casxcas/montage_vue4.jpg exemples/casxcas/montage_vue4_haie.jpg     --projet PV-Gannay-sur-Loire
+```
+
+Les deux outils ne partagent **aucun code** : `generateur-dp` vit sur cairo,
+geopandas et Streamlit, le photomontage sur Blender et scipy. Le lien se résume à
+des fichiers posés dans `projets/{nom}/DP_6/`, et comme l'application les écrit
+sous leur propre nom, le nom est le seul canal :
+
+```
+vue{N}_1_etat_actuel.jpg
+vue{N}_2_projet.jpg
+vue{N}_3_mesures_paysageres.jpg
+```
+
+Un tri alphabétique groupe alors par vue et ordonne les volets. Le préfixe n'est
+pas décoratif : sans lui, trois vues écriraient trois fois les mêmes trois noms.
+
+**Les trois volets doivent partager le cadrage.** Les montages sont rognés de leur
+bandeau GPS après composition ; l'état actuel l'est donc identiquement, et le
+module refuse si les tailles ne concordent pas. Trois images qui ne se superposent
+pas ne comparent plus rien, et cela ne se verrait qu'à l'impression du dossier.
+
 ## Installation
 
 ```bash

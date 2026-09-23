@@ -37,6 +37,11 @@ def _srgb_lin(c):
     return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
 
 
+#: Opacite du sol du site. La photo transparait du complement, ce qui ancre la
+#: couverture dans le grain et la lumiere du terrain reel.
+OPACITE_HERBE = 0.72
+
+
 def _mat(nom, base, rugosite, metal=0.0, transmission=0.0, specular=0.5):
     m = bpy.data.materials.new(nom)
     m.use_nodes = True
@@ -48,6 +53,69 @@ def _mat(nom, base, rugosite, metal=0.0, transmission=0.0, specular=0.5):
         p.inputs["Specular IOR Level"].default_value = specular
     if transmission and "Transmission Weight" in p.inputs:
         p.inputs["Transmission Weight"].default_value = transmission
+    return m
+
+
+def _mat_herbe(base, rugosite=0.94, opacite=OPACITE_HERBE):
+    """Herbe rase du site, avec un grain — un aplat se lit comme une peinture.
+
+    Le materiau plat convenait a Gannay, ou le sol du site ne servait qu'a
+    boucher les jeux entre tables, a plus de cent metres. A quatre metres d'un
+    point de vue, il couvre une grande surface et se lit alors comme une piste
+    ou une pelouse peinte : c'est ce qu'a vu le chef de projet sur PM4.
+
+    Deux octaves, aux deux echelles que l'oeil cherche sur une prairie fauchee :
+    la touffe, autour de dix centimetres, et la trace de passage, autour du
+    metre. Les coordonnees sont en metres — le sol est exporte dans le repere
+    local — donc les echelles se lisent directement.
+    """
+    m = bpy.data.materials.new("herbe")
+    m.use_nodes = True
+    nt = m.node_tree
+    p = nt.nodes["Principled BSDF"]
+    p.inputs["Roughness"].default_value = rugosite
+    p.inputs["Metallic"].default_value = 0.0
+    # PARTIELLEMENT TRANSPARENT, ET C'EST LE POINT. Un sol opaque se lit comme
+    # une piste : une surface lisse, d'une seule teinte, posee au milieu d'un
+    # couvert qui, lui, a du grain, des accidents et sa propre lumiere. La
+    # meme raison a conduit `montage._teinte_sol` a garder un quart de la
+    # photo sous la couverture repeinte du cote Sarnois — « pour qu'elle reste
+    # ancree dans la lumiere et les accidents du terrain reel, au lieu de
+    # flotter comme un aplat peint ». Le rendu obtient la meme chose par son
+    # alpha : la photo transparait d'autant.
+    p.inputs["Alpha"].default_value = opacite
+
+    coord = nt.nodes.new("ShaderNodeTexCoord")
+    fin = nt.nodes.new("ShaderNodeTexNoise")
+    fin.inputs["Scale"].default_value = 11.0        # ~ 9 cm
+    fin.inputs["Detail"].default_value = 3.0
+    large = nt.nodes.new("ShaderNodeTexNoise")
+    large.inputs["Scale"].default_value = 0.8       # ~ 1,2 m
+    large.inputs["Detail"].default_value = 2.0
+    nt.links.new(coord.outputs["Object"], fin.inputs["Vector"])
+    nt.links.new(coord.outputs["Object"], large.inputs["Vector"])
+
+    melange = nt.nodes.new("ShaderNodeMixRGB")
+    melange.blend_type = "MIX"
+    melange.inputs["Fac"].default_value = 0.45
+    nt.links.new(fin.outputs["Fac"], melange.inputs["Color1"])
+    nt.links.new(large.outputs["Fac"], melange.inputs["Color2"])
+
+    # RAMPE ETROITE AUTOUR DE 0,5 : le Fac d'un bruit de Perlin n'occupe pas
+    # 0-1, il se serre autour du milieu. Une rampe large ecraserait le contraste
+    # au lieu de l'etaler — piege deja rencontre sur le feuillage.
+    rampe = nt.nodes.new("ShaderNodeValToRGB")
+    # RAMPE PLUS ETROITE ENCORE : le Fac d'un Perlin se serre autour de 0,5,
+    # et la premiere version a 0,40-0,60 ne rendait que 4 niveaux d'ecart-type
+    # sur 255 — un aplat. A 0,44-0,56 elle en rend 11 a 16, ce qui se lit.
+    rampe.color_ramp.elements[0].position = 0.44
+    rampe.color_ramp.elements[1].position = 0.56
+    clair = [min(1.0, _srgb_lin(c) * 1.28) for c in base]
+    sombre = [_srgb_lin(c) * 0.74 for c in base]
+    rampe.color_ramp.elements[0].color = (*sombre, 1.0)
+    rampe.color_ramp.elements[1].color = (*clair, 1.0)
+    nt.links.new(melange.outputs["Color"], rampe.inputs["Fac"])
+    nt.links.new(rampe.outputs["Color"], p.inputs["Base Color"])
     return m
 
 
@@ -173,7 +241,7 @@ def materiaux(reglages=None):
         # "bois" existant est un acacia miel, juste pour un poteau de
         # cloture, faux pour un tronc de charme ou de noisetier.
         "branche": _mat("branche", (126, 114, 98), 0.90, 0.0, 0.0, 0.20),
-        "herbe": _mat("herbe", tuple(r.get("herbe_rgb", (104, 120, 74))), 0.94, 0.0),
+        "herbe": _mat_herbe(tuple(r.get("herbe_rgb", (104, 120, 74)))),
         "sol_ombre": _mat("sol_ombre", (120, 130, 95), 0.95, 0.0),
     }
 

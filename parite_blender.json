@@ -10,9 +10,9 @@
   "azimut proche de 360"
  ],
  "empreintes": {
-  "camera.py": "418a6fcd58bbe421",
+  "camera.py": "b9f20bbb0b1e2ded",
   "blender_camera.py": "599b21043dc549aa",
   "parite_blender.py": "13c6d1f29c7357cc"
  },
- "note": "Relancer `python parite_blender.py preparer <params>` puis blender -b -P blender_camera.py -- <params> <sortie> puis `comparer` des que l'une de ces empreintes change. Le repere du projet est GAUCHER, Blender est droitier : une erreur de signe retourne le projet sans rien signaler."
+ "note": "Relancer `python parite_blender.py preparer <params>` puis blender -b -P blender_camera.py -- <params> <sortie> puis `comparer` des que l'une de ces empreintes change. Le repere du projet est GAUCHER, Blender est droitier : une erreur de signe retourne le projet sans rien signaler. Empreinte de camera.py rafraichie le 23/09/2026 apres passage de focale_px_depuis_exif a la convention de la diagonale : parite relancee, ecart inchange a 0,00042 px."
 }

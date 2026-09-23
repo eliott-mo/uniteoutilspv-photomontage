@@ -27,6 +27,8 @@ from zoneinfo import ZoneInfo
 
 import numpy as np
 from PIL import Image
+
+import camera
 from PIL.ExifTags import TAGS
 
 import lecture_dxf
@@ -121,9 +123,11 @@ def exif_photo(chemin):
     f_px = None
     if f35:
         cote = max(larg, haut) if rognee else larg
-        ref = 36.0 if rognee else 36.0
-        # photo non rognee en paysage : la largeur couvre les 36 mm du grand cote
-        f_px = (larg / 36.0 * float(f35)) if not rognee else (max(larg, haut) / 36.0 * float(f35))
+        # UNE SEULE CONVENTION POUR TOUT LE DEPOT : la diagonale, via
+        # `camera.focale_px_depuis_exif`. Ce module avait la sienne — le grand
+        # cote pour 36 mm — qui sous-estime de 4 % sur un capteur 4:3. Le
+        # calage de Saint-Cyr a ete lance avec 2607 px au lieu de 2711.
+        f_px = camera.focale_px_depuis_exif(larg, haut, float(f35))[0]
     return {"largeur": larg, "hauteur": haut, "ratio": round(larg / haut, 4), "rognee": rognee,
             "f35": float(f35) if f35 else None, "f_px": f_px, "lon": lon, "lat": lat,
             "appareil": f"{base.get('Make','')} {base.get('Model','')}".strip(),

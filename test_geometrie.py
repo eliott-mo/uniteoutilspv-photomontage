@@ -284,18 +284,26 @@ def test_mutation_detectee(mutation, monkeypatch):
 # V2.5 - focale d'une photo rognee
 # ---------------------------------------------------------------------------
 def test_photo_native_non_rognee():
+    """Photo 3:4 intacte : la diagonale donne la focale, sans detour.
+
+    L'assertion portait auparavant sur `largeur / 24`, qui suppose un capteur
+    2:3. Sur un 4:3 elle surestime de 8 %.
+    """
     f_px, cote, rognee = focale_px_depuis_exif(3024, 4032, 26.0)
     assert not rognee
-    assert cote.startswith("largeur")
-    assert abs(f_px - 3024 / 24.0 * 26.0) < 1e-9
+    assert cote == "diagonale"
+    assert abs(f_px - 26.0 * math.hypot(3024, 4032) / 43.266615) < 1e-6
 
 
 def test_photo_rognee_9_16_detectee():
     """IMG_6941 : 2268x4032 = 9:16, rognee par rapport au 3:4 natif."""
     f_px, cote, rognee = focale_px_depuis_exif(2268, 4032, 26.0)
     assert rognee, "le rognage 9:16 doit etre detecte"
-    assert f_px > 2268 / 24.0 * 26.0, "la focale corrigee doit etre plus grande"
-    assert abs(f_px - 4032 / 36.0 * 26.0) < 1e-9
+    # Le capteur complet mesurait 3024 x 4032 : c'est SA diagonale qui compte,
+    # la focale n'ayant pas bouge quand l'application a coupe la largeur.
+    attendu = 26.0 * math.hypot(4032 * 3 / 4, 4032) / 43.266615
+    assert abs(f_px - attendu) < 1e-6
+    assert f_px > 26.0 * math.hypot(2268, 4032) / 43.266615
 
 
 # ---------------------------------------------------------------------------

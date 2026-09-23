@@ -20,6 +20,10 @@ Conventions (a ne jamais changer sans faire echouer les tests) :
 """
 import math
 
+#: Diagonale du 24 x 36, en millimetres : c'est elle qui definit la focale
+#: equivalente 35 mm, donc la seule conversion juste.
+DIAGONALE_35 = 43.266615
+
 import numpy as np
 
 MUTATIONS = (
@@ -156,32 +160,44 @@ class Camera:
                 f"f={self.focale_eq35} mm -> {self.f_px:.0f} px, h={self.h})")
 
 
-def focale_px_depuis_exif(largeur_px, hauteur_px, focale_eq35, largeur_capteur_native=None,
-                          hauteur_capteur_native=None):
-    """f_px correcte meme si la photo a ete rognee.
+def focale_px_depuis_exif(largeur_px, hauteur_px, focale_eq35,
+                          natif=3.0 / 4.0):
+    """f_px depuis la focale equivalente 35 mm, meme si la photo a ete rognee.
 
-    La focale equivalente 35 mm de l'EXIF se rapporte au capteur COMPLET. Si
-    l'application photo a rogne l'image (GPS Map Camera passe le 3:4 natif de
-    l'iPhone en 9:16), la largeur de l'image ne couvre plus 24 mm de capteur
-    equivalent et la convention usuelle sous-estime la focale.
+    LA DIAGONALE, ET RIEN D'AUTRE. Une focale « equivalente 35 mm » se definit
+    par l'egalite des champs sur la DIAGONALE : le constructeur ecrit
+    f35 = f x 43,267 / diagonale_capteur. Il n'y a donc qu'une conversion
+    juste, f_px = f35 x diagonale_px / 43,267, et elle ne depend pas du format.
 
-    Le cote non rogne donne la bonne echelle. On suppose ici que le rognage
-    ne touche que la largeur (cas GPS Map Camera en portrait) : la hauteur
-    couvre alors les 36 mm du grand cote du capteur 35 mm.
+    Une convention par COTE est fausse des que le format n'est pas le 2:3 du
+    24 x 36. Sur un capteur 4:3, prendre le petit cote pour 24 mm surestime de
+    8 %, prendre le grand pour 36 mm sous-estime de 4 %. Les deux etaient dans
+    ce depot — celle-ci ici, l'autre dans `preparer_vue` — en plus de la bonne,
+    qui servait aux montages livres et n'etait ecrite nulle part en commun.
+
+    Mesure du 23/09/2026 sur PM(3) de Saint-Cyr, 4080 x 3060 a 23 mm eq. :
+    3910 px par le petit cote, 2607 par le grand, 2711 par la diagonale. Et la
+    pose de Gannay, livree, porte f_px = 961,47 — soit exactement la diagonale
+    de son 1280 x 960 a 26 mm.
+
+    LE BRANCHEMENT « NON ROGNEE » N'AVAIT JAMAIS SERVI : son ternaire
+    `largeur_px if not portrait else largeur_px` rend la meme chose des deux
+    cotes. Gannay et Sarnois etant tous deux en portrait rogne, aucune photo
+    n'y etait passee avant Saint-Cyr.
+
+    UNE PHOTO ROGNEE NE CHANGE PAS LA FOCALE, elle change la diagonale. On
+    reconstitue donc le capteur complet depuis le cote intact — GPS Map Camera
+    passe le 3:4 natif en 9:16 en ne coupant que la largeur — et on prend la
+    diagonale de CE format-la.
 
     Renvoie (f_px, cote_reference, rognee).
     """
     largeur_px = float(largeur_px)
     hauteur_px = float(hauteur_px)
-    portrait = hauteur_px >= largeur_px
-    ratio = min(largeur_px, hauteur_px) / max(largeur_px, hauteur_px)
-    natif = 3.0 / 4.0
-    rognee = abs(ratio - natif) > 0.02
-    if largeur_capteur_native and hauteur_capteur_native:
-        rognee = abs(ratio - min(largeur_capteur_native, hauteur_capteur_native)
-                     / max(largeur_capteur_native, hauteur_capteur_native)) > 0.02
+    petit, grand = sorted((largeur_px, hauteur_px))
+    rognee = abs(petit / grand - natif) > 0.02
     if not rognee:
-        cote_px = largeur_px if not portrait else largeur_px
-        return cote_px / 24.0 * focale_eq35, "largeur (24 mm)", False
-    grand = max(largeur_px, hauteur_px)
-    return grand / 36.0 * focale_eq35, "hauteur non rognee (36 mm)", True
+        return (focale_eq35 * math.hypot(largeur_px, hauteur_px) / DIAGONALE_35,
+                "diagonale", False)
+    return (focale_eq35 * math.hypot(grand * natif, grand) / DIAGONALE_35,
+            "diagonale du capteur reconstitue", True)

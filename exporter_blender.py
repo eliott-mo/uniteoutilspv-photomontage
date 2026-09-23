@@ -24,6 +24,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+from PIL import Image
 
 import lecture_dxf
 import montage as M
@@ -108,8 +109,21 @@ def geometrie_tables(scn, mnt, sol_abs):
     return mod, met, cadre
 
 
-def geometrie_cloture(scn, sol_abs, E0, N0, dmax=300.0):
-    """Poteaux d'acacia (cylindres a 8 faces) et nappe de grillage."""
+def geometrie_cloture(scn, sol_abs, E0, N0, dmax=300.0, ouvertures=()):
+    """Poteaux d'acacia (cylindres a 8 faces) et nappe de grillage.
+
+    `ouvertures` : suite de (est, nord, rayon), une par portail. Le segment
+    dont le milieu y tombe n'est pas monte, ni ses piquets. SANS CELA LE
+    GRILLAGE TRAVERSE LE VANTAIL : sur la vue 4 de Saint-Cyr, le portail se
+    lisait derriere sa propre cloture, a un metre du photographe.
+
+    Un rayon PAR portail, et non un rayon commun cale sur le plus large :
+    `exporter_gannay` avait deja releve qu'un rayon commun ouvre trop la
+    cloture aux petits portails.
+    """
+    def _ouvert(x, y):
+        return any(math.hypot(x - e, y - n) < r for e, n, r in ouvertures)
+
     bois = {"v": [], "f": []}
     # le grillage porte des UV EN METRES : la maille se dessine ensuite par une
     # texture procedurale, faute de quoi le quad est un mur plein.
@@ -122,6 +136,9 @@ def geometrie_cloture(scn, sol_abs, E0, N0, dmax=300.0):
             L = math.hypot(*(b - a))
             if L < 0.2:
                 continue
+            if _ouvert((a[0] + b[0]) / 2, (a[1] + b[1]) / 2):
+                s0 += L
+                continue
             if math.hypot((a[0] + b[0]) / 2 - E0, (a[1] + b[1]) / 2 - N0) < dmax:
                 za, zb = sol_abs(*a), sol_abs(*b)
                 grillage["f"].append(_quad(grillage["v"],
@@ -133,7 +150,7 @@ def geometrie_cloture(scn, sol_abs, E0, N0, dmax=300.0):
                 depart = math.ceil(s0 / M.PAS_PIQUET) * M.PAS_PIQUET - s0
                 for s in np.arange(max(depart, 0.0), L, M.PAS_PIQUET):
                     q = a + (b - a) * (s / L)
-                    if math.hypot(q[0] - E0, q[1] - N0) > dmax:
+                    if math.hypot(q[0] - E0, q[1] - N0) > dmax or _ouvert(*q):
                         continue
                     zs = sol_abs(q[0], q[1])
                     r = M.DIAM_POTEAU / 2
@@ -149,6 +166,84 @@ def geometrie_cloture(scn, sol_abs, E0, N0, dmax=300.0):
                                                [p0[0], p0[1], zs + M.HAUTEUR_CLOTURE + 0.12]))
             s0 += L
     return bois, grillage
+
+
+def couleur_du_sol(chemin_photo, horizon, bande=0.18):
+    """Teinte du sol du site, relevee sur la photo SOUS l'horizon.
+
+    `montage.couleur_prairie` ne retient que les pixels VERTS. C'est juste sur
+    un cliche d'ete ; sur un cliche d'hiver il n'en trouve pas assez et retombe
+    sur son defaut, un vert de prairie d'ete — mesure a Saint-Cyr : le sol
+    rendu sortait a RGB 58/74/61 quand le sol reel de la photo est a 78/79/75
+    pour l'herbe du talus et 137/112/95 pour la friche. Une nappe verte au
+    milieu d'un paysage gris-brun se lit comme une pelouse peinte, et c'est ce
+    qu'a vu le chef de projet.
+
+    On prend donc la MEDIANE du sol tel qu'il est, quelle que soit sa couleur :
+    l'herbe rase d'un site suit la saison du reste de l'image.
+    """
+    a = np.asarray(Image.open(chemin_photo).convert("RGB"), dtype=float)
+    H = a.shape[0]
+    v0 = int(min(H - 2, max(0, horizon)))
+    v1 = int(min(H, v0 + bande * H))
+    if v1 - v0 < 8:
+        return [104.0, 116.0, 76.0]
+    return [float(x) for x in np.median(a[v0:v1].reshape(-1, 3), axis=0)]
+
+
+def sol_du_site(scn, sol_abs, marge=6.0, verbose=True):
+    """Sol OPAQUE sous la NAPPE, et pas sur toute l'emprise.
+
+    A QUOI IL SERT, ET DONC JUSQU'OU IL DOIT ALLER. Sa seule raison d'etre est
+    de boucher ce qui, sinon, laisserait passer la photo : les jeux entre
+    tables, qui se superposent d'une rangee a l'autre — elles ont toutes la
+    meme phase — et font paraitre les panneaux translucides. Mesure a Gannay :
+    39 % des pixels rendus avaient un alpha entre 0,05 et 0,95.
+
+    Il n'a donc besoin de couvrir que l'emprise des TABLES, elargie de quelques
+    metres. Etendu a toute l'enceinte, il pose au premier plan une grande
+    surface lisse d'une seule teinte, que l'oeil lit comme une piste ou une
+    plateforme — c'est ce qu'a vu le chef de projet sur PM4 de Saint-Cyr, ou le
+    point de vue est a quatre metres de la cloture et ou l'enceinte occupe la
+    moitie basse du cadre.
+
+    Ni la teinte ni le grain n'y changent rien : le defaut n'est pas dans le
+    materiau mais dans l'ETENDUE. Un sol qui s'arrete sous les tables laisse le
+    premier plan a la photo, qui montre deja le couvert reel.
+
+    L'emprise est l'enveloppe convexe des tables, dilatee de `marge`, puis
+    RECOUPEE PAR LA CLOTURE : le sol du site ne deborde jamais de son site.
+    """
+    from shapely.geometry import MultiPoint, Polygon
+    from shapely.ops import triangulate as _trianguler
+
+    if not scn.tables:
+        return None
+    coins = [(float(p[0]), float(p[1])) for t in scn.tables for p in t.q]
+    emprise = MultiPoint(coins).convex_hull.buffer(marge)
+    lignes = scn.lignes.get("cloture") or []
+    if lignes:
+        cl = Polygon([(float(a), float(b)) for a, b in lignes[0]["pts"]])
+        if cl.is_valid and cl.area > 0:
+            emprise = emprise.intersection(cl)
+    if emprise.is_empty:
+        return None
+
+    bloc = {"v": [], "f": []}
+    for tri in _trianguler(emprise):
+        # `triangulate` travaille sur l'enveloppe convexe : les triangles qui
+        # sortent de l'emprise sont ecartes, sinon le sol deborde.
+        if not emprise.contains(tri.centroid):
+            continue
+        n0 = len(bloc["v"])
+        for x, y in list(tri.exterior.coords)[:3]:
+            bloc["v"].append([float(x), float(y), sol_abs(x, y)])
+        bloc["f"].append([n0, n0 + 1, n0 + 2])
+    if verbose:
+        print(f"  sol du site    {len(bloc['v']):6d} sommets, "
+              f"{len(bloc['f']):6d} faces  ({emprise.area / 10000:.2f} ha, "
+              f"emprise des tables + {marge:.0f} m)")
+    return bloc if bloc["f"] else None
 
 
 def capteur_ombre(sol_rel, rayon=RAYON_SOL, pas=PAS_SOL):
@@ -531,9 +626,39 @@ def couleur_vegetation(chemin_photo, horizon_v):
     return [float(x) for x in np.median(v, axis=0)]
 
 
-def exporter(num, sortie):
-    pose = json.loads((DOSSIER / f"pose_PV{num}.json").read_text(encoding="utf-8"))
-    scn = lecture_dxf.lire(M.DXF)
+def exporter(num, sortie, pose=None, scn=None, dossier=None):
+    """Exporte la scene d'une vue vers un JSON que Blender saura monter.
+
+    `pose` et `scn` sont facultatifs et servent a sortir de Sarnois : le
+    module y etait cloue par `DOSSIER` et `M.DXF`. Une `pose` peut etre un
+    chemin ou un dictionnaire deja lu ; une `scn` vient de `lecture_dxf.lire`
+    comme de `lecture_contrat.lire`, les deux rendant la meme `Scene`.
+    """
+    if pose is None:
+        pose = DOSSIER / f"pose_PV{num}.json"
+    # Le dossier de la POSE sert de racine a la photo : un chemin relatif dans
+    # la pose se lit a cote d'elle, et non dans le dossier de Sarnois.
+    if dossier is None:
+        dossier = Path(pose).parent if not isinstance(pose, dict) else DOSSIER
+    if not isinstance(pose, dict):
+        pose = json.loads(Path(pose).read_text(encoding="utf-8"))
+    if scn is None:
+        scn = lecture_dxf.lire(M.DXF)
+
+    # LA PHOTO DOIT FAIRE LA TAILLE QUE LA POSE ANNONCE. Sans ce controle,
+    # une pose calee sur une image reduite mais pointant l'originale se lit
+    # sans erreur : la focale et l'horizon sont alors rapportes a une autre
+    # echelle, et tout ce qui echantillonne la photo — la teinte du sol, celle
+    # de la haie — va chercher ses pixels au mauvais endroit. Constate a
+    # Saint-Cyr : la couleur du sol a ete relevee dans le ciel.
+    _photo = Path(dossier) / pose["photo"]
+    _taille = Image.open(_photo).size
+    if _taille != (pose["largeur"], pose["hauteur"]):
+        raise ValueError(
+            f"{_photo.name} fait {_taille[0]}x{_taille[1]} alors que la pose "
+            f"annonce {pose['largeur']}x{pose['hauteur']}. La focale et "
+            "l'horizon se rapportent a la taille declaree : lire l'une pour "
+            "l'autre fausse tout sans rien signaler.")
     q = np.array([t.q for t in scn.tables])
     mnt = terrain.charger_mnt((q[:, :, 0].min(), q[:, :, 1].min(),
                                q[:, :, 0].max(), q[:, :, 1].max()), pas=5.0, marge=350.0)
@@ -559,8 +684,17 @@ def exporter(num, sortie):
     haie = geometrie_haie(scn, sol_abs, E0, N0,
                           hauteur=pose.get("hauteur_haie", M.HAUTEUR_HAIE),
                           cartes=cartes, bois=bois_haie)
-    bois, grillage = geometrie_cloture(scn, sol_abs, E0, N0)
+    import ouvrages_techniques as OT
+    tech, ouvertures, registre = OT.ouvrages(scn, sol_abs, E0, N0,
+                                             parametres=pose.get("parametres"))
+    bois, grillage = geometrie_cloture(scn, sol_abs, E0, N0,
+                                       ouvertures=ouvertures)
     sol = capteur_ombre(sol_rel)
+    herbe = sol_du_site(scn, sol_abs)
+    # LES OUVRAGES TECHNIQUES FONT PARTIE DU RENDU, toujours. Ils manquaient
+    # jusqu'au 23/09/2026 : le montage de Saint-Cyr montrait des poteaux la ou
+    # le plan porte un portail a douze metres et une aire d'aspiration a un
+    # degre de l'axe de visee.
 
     def local(bloc):
         bloc["v"] = [[v[0] - E0, v[1] - N0, v[2] - z0] for v in bloc["v"]]
@@ -573,12 +707,20 @@ def exporter(num, sortie):
         "camera": {"largeur": cam.W, "hauteur": cam.H, "f_px": cam.f_px,
                    "position": [0.0, 0.0, cam.h],
                    "R": [[float(x) for x in ligne] for ligne in cam.R]},
+        # Le registre voyage AVEC la scene : `conformite` doit pouvoir la
+        # confronter au plan sans rejouer l'export.
+        "registre": registre,
         "soleil": pose.get("soleil"),          # None si la photo n'a pas de date
         "ciel": pose.get("ciel_rgb", [135, 156, 173]),
         # teinte du feuillage prise sur la photo elle-meme
-        "materiaux": {"haie_rgb": couleur_vegetation(
-            DOSSIER / pose["photo"], pose["horizon"])},
+        "materiaux": {"herbe_rgb": couleur_du_sol(
+                          Path(dossier) / pose["photo"], pose["horizon"]),
+                      "haie_rgb": couleur_vegetation(
+            Path(dossier) / pose["photo"], pose["horizon"])},
         "objets": [
+            # LE SOL D'ABORD, pour qu'il soit derriere tout le reste a la
+            # lecture comme au rendu.
+            *([{"materiau": "herbe", **local(herbe)}] if herbe else []),
             {"materiau": "module", **local(mod)},
             {"materiau": "acier", **local(met)},
             {"materiau": "cadre", **local(cadre)},
@@ -587,10 +729,20 @@ def exporter(num, sortie):
             {"materiau": "haie", **local(haie)},
             {"materiau": "feuillage", **local(cartes)},
             {"materiau": "branche", **local(bois_haie)},
+            *[{"materiau": k, **local(v)} for k, v in sorted(tech.items())],
             {"materiau": "sol_ombre", **sol},
         ],
     }
     Path(sortie).write_text(json.dumps(data), encoding="utf-8")
+
+    # CONFRONTATION AU PLAN, AVANT TOUT RENDU. Un rendu perspectif melange la
+    # geometrie, la pose et l'occultation : quand il cloche, on ne sait pas
+    # laquelle a lache, et l'on corrige a l'aveugle. Quatre allers-retours ont
+    # ete perdus ainsi. Le controle, lui, dit ou regarder, et il ne se laisse
+    # pas convaincre par une image qui a l'air correcte.
+    import conformite
+    for ligne in conformite.verifier(data, scn, E0, N0):
+        print(f"  ! conformite au plan : {ligne}")
     for o in data["objets"]:
         print(f"  {o['materiau']:12s} {len(o['v']):7d} sommets, {len(o['f']):6d} faces")
     print(f"ecrit : {sortie}")

@@ -33,6 +33,26 @@ MOTIFS_LIGNES = {
 }
 
 
+def _categorie(couche):
+    """Categorie d'une couche, ou None."""
+    lay = _sans_accents(couche).lower()
+    for cat, motifs in MOTIFS_LIGNES.items():
+        if any(_sans_accents(m).lower() in lay for m in motifs):
+            return cat
+    return None
+
+
+def _sommets_hatch(chemin):
+    """Sommets d'un contour de hachure, polyligne ou suite d'aretes."""
+    if hasattr(chemin, "vertices"):
+        return [(float(v[0]), float(v[1])) for v in chemin.vertices]
+    pts = []
+    for a in getattr(chemin, "edges", ()):
+        if hasattr(a, "start"):
+            pts.append((float(a.start[0]), float(a.start[1])))
+    return pts
+
+
 def _sans_accents(s):
     for a, b in (("é", "e"), ("è", "e"), ("ê", "e"), ("à", "a"), ("ô", "o"), ("û", "u"), ("î", "i"), ("ç", "c")):
         s = s.replace(a, b).replace(a.upper(), b.upper())
@@ -148,12 +168,34 @@ def lire(chemin):
 
     lignes = {k: [] for k in MOTIFS_LIGNES}
     for e in msp.query("LWPOLYLINE"):
-        lay = _sans_accents(e.dxf.layer).lower()
-        for cat, motifs in MOTIFS_LIGNES.items():
-            if any(_sans_accents(m).lower() in lay for m in motifs):
-                pts = [(float(x), float(y)) for x, y in e.get_points("xy")]
-                lignes[cat].append({"pts": pts, "fermee": bool(e.closed), "couche": e.dxf.layer})
-                break
+        cat = _categorie(e.dxf.layer)
+        if cat:
+            pts = [(float(x), float(y)) for x, y in e.get_points("xy")]
+            lignes[cat].append({"pts": pts, "fermee": bool(e.closed),
+                                "couche": e.dxf.layer})
+
+    # LES HATCH COMPTENT, MAIS SEULEMENT LA OU ILS SONT LE SEUL TRACE. A
+    # Saint-Cyr, la couche `UNI_portail` ne porte aucune polyligne : six HATCH,
+    # neuf LINE et six ARC. Ne lire que les polylignes revenait a dire qu'il
+    # n'y a pas de portail — et le montage en placait alors quinze, un par
+    # segment et par arc, emmeles les uns dans les autres.
+    #
+    # ON NE DEDUPLIQUE PAS PAR LA DISTANCE. Sur `UNI_PDL`, les hachures ne
+    # recouvrent pas les polylignes : ce sont d'autres rectangles, decales de
+    # deux metres, dessines pour remplir des sous-parties du poste. Un seuil
+    # de proximite aurait donc a trancher entre « meme ouvrage » et « ouvrage
+    # voisin », ce qu'aucune valeur ne fait proprement. La regle par COUCHE,
+    # elle, ne se trompe jamais : elle n'ajoute que ce qui serait invisible.
+    avec_polyligne = {e.dxf.layer for e in msp.query("LWPOLYLINE")}
+    for e in msp.query("HATCH"):
+        cat = _categorie(e.dxf.layer)
+        if not cat or e.dxf.layer in avec_polyligne:
+            continue
+        for chemin_h in e.paths:
+            pts = _sommets_hatch(chemin_h)
+            if len(pts) >= 3:
+                lignes[cat].append({"pts": pts, "fermee": True,
+                                    "couche": e.dxf.layer, "forme": "hatch"})
 
     return Scene(tables=tables, lignes={k: v for k, v in lignes.items() if v},
                  topo=topo, source=str(chemin))

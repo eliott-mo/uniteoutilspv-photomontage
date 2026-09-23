@@ -147,6 +147,40 @@ module physique (base 16/20/33, rugosité 0,10, spéculaire 0,5).
 composée telle quelle, un alpha de 0,89 ne laisse que 11 % de la lumière. Un sol à l'ombre
 sous un ciel dégagé en garde 40 à 55 %, éclairé par le ciel et d'une lumière bleue.
 
+**`np.allclose` est un piège en Lambert 93.** Sa tolérance est *relative* :
+`rtol=1e-5` sur un nord de 6 750 000 vaut **soixante-sept mètres**. Écrit ainsi, le test
+« le contour se referme-t-il ? » retirait un sommet à chaque secteur de portail — qui
+n'en a que trois — et plus aucun vantail n'était reconnu : le plan semblait n'avoir aucun
+portail. Toute comparaison de positions se fait en mètres, explicitement.
+
+**Un matériau ajouré n'a pas l'alpha d'un mur.** Le grillage plafonne à 80 entre deux
+poteaux. Lire le bord du projet à `alpha > 128` y donnait NaN, donc aucun défrichement,
+donc un peigne de bandes verticales intactes — une par entre-poteau. À `alpha > 32` la
+ligne est continue : 765, 769, 757, 756, 754 là où 128 donnait 765, NaN, NaN, 756, 823.
+
+**Le plan donne les cotes, le gabarit ne sert que de secours.** J'ai d'abord tenu
+l'inverse. La bâche incendie de Saint-Cyr est dessinée 8,08 × 7,40 m et longe la clôture ;
+montée au gabarit de 11,70 × 8,90, **15 % de son aire tombait hors de l'enceinte** et la
+clôture la traversait. Le poste, lui, est dessiné 12,00 × 3,00 m, soit le gabarit au
+centimètre : là où les deux sources existent, elles concordent. Seule la **hauteur** n'est
+jamais lisible sur une vue de dessus.
+
+**Un portail est un segment de clôture.** La couche `UNI_portail` ne porte parfois aucune
+polyligne — à Saint-Cyr, six hachures, neuf lignes et six arcs. Compter un portail par
+tracé en donnait quinze, emmêlés. Les hachures sont des **vantaux**, et leurs pointes de
+pivot sont les deux bouts d'un segment de clôture : le portail *est* ce segment, et la
+clôture doit s'y **ouvrir**, faute de quoi le grillage traverse le vantail.
+
+**Un ciel ne s'ajuste pas par un polynôme.** Un modèle global — degré 1 en x, 2 en y —
+laisse un résidu d'écart-type 12 à 15 niveaux : un pixel de ciel sur cinq dépassait le
+seuil d'effacement et se faisait repeindre treize niveaux trop clair, dans la forme exacte
+de l'arbre effacé. Le fantôme, c'était le ciel repeint, pas la branche survivante. Le fond
+se prend **localement**, par convolutions normalisées du plus fin au plus grossier :
+erreur médiane 8,3 → 1,5. Et le support se nettoie **par la teinte**, jamais par la
+clarté : un peuplier d'hiver au soleil est plus *clair* que le ciel (190 contre 170), mais
+un ciel tient dans six niveaux de R−B (−104 à −98) là où le rideau d'arbres va de −82
+à −19.
+
 **Un heredoc Bash long se tronque.** Au-delà d'une centaine de lignes, écrire le fichier,
 pas le coller dans le shell.
 

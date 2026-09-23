@@ -9,6 +9,7 @@ ezdxf==1.4.4             # lecture des plans DXF (PVcase et HelioScope)
 pyproj==3.7.2            # WGS84 -> Lambert 93
 requests==2.33.1         # MNT RGE ALTI et orthophotos IGN
 matplotlib==3.10.9       # matplotlib.path : appartenance à un polygone
+fiona==1.10.1            # lecture du geometries.gpkg de generateur-dp
 
 # Tests
 pytest==8.4.2

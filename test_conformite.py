@@ -125,3 +125,35 @@ def test_le_registre_sort_de_ouvrages_et_se_confronte():
     from shapely.geometry import Polygon
     p, m = Polygon(registre[0]["plan"]), Polygon(registre[0]["monte"])
     assert p.intersection(m).area / p.union(m).area == pytest.approx(1.0, abs=1e-3)
+
+
+def test_ce_que_le_plan_met_dehors_n_est_pas_signale():
+    """Un poste de livraison est dehors par construction.
+
+    Il doit rester accessible au gestionnaire de reseau depuis la voie
+    publique. Mesure sur Sarnois IND10b : `UNI_PDL` est a 100 % hors de
+    l'enceinte AU PLAN. Le signaler etait un faux positif — et un faux positif
+    repete quinze fois finit par etre ignore.
+    """
+    scn, _ = _plan_avec_piste()
+    dehors = _rect((E0 + 42.0, N0 + 20.0), 0.0, 10.0, 8.0)
+    scene = {"objets": [{"materiau": "beton",
+                         "v": [[x - E0, y - N0, 100.0] for x, y in dehors],
+                         "f": [[0, 1, 2], [0, 2, 3]]}],
+             "registre": [{"nom": "poste", "couche": "UNI_PDL",
+                           "plan": dehors, "monte": dehors}]}
+    assert CF.verifier(scene, scn, E0, N0) == []
+
+
+def test_un_debord_que_le_plan_ne_prevoyait_pas_reste_signale():
+    """La bache montee au gabarit : le plan la mettait dedans."""
+    scn, _ = _plan_avec_piste()
+    plan = _rect((E0, N0 + 20.0), 0.0, 8.0, 7.0)
+    monte = _rect((E0 + 42.0, N0 + 20.0), 0.0, 10.0, 8.0)
+    scene = {"objets": [{"materiau": "pvc",
+                         "v": [[x - E0, y - N0, 100.0] for x, y in monte],
+                         "f": [[0, 1, 2], [0, 2, 3]]}],
+             "registre": [{"nom": "citerne", "couche": "UNI_SDIS_Bache",
+                           "plan": plan, "monte": monte}]}
+    a = CF.verifier(scene, scn, E0, N0)
+    assert any("hors de l'enceinte" in x for x in a)

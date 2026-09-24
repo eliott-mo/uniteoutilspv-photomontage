@@ -217,3 +217,34 @@ def test_l_aire_d_aspiration_passe_par_les_surfaces_et_une_seule_fois():
     blocs, _ouv, _reg = OT.ouvrages(scn, lambda x, y: 100.0, E0, N0, verbose=False)
     assert _aire_bloc(blocs["grave"]) == pytest.approx(32.0, rel=1e-6)
     assert "pvc" not in blocs
+
+
+# --------------------------- un polygone qui en contient un autre est un sol
+def test_un_polygone_englobant_est_une_plateforme_pas_un_second_batiment():
+    """Sarnois IND10b : `VAL-PDL` contient `UNI_PDL` en entier.
+
+    Monter les deux donnait deux postes empiles, dont le plus gros debordait a
+    65 % hors de l'enceinte. La nidification tranche sans deviner d'apres le
+    nom de la couche : un batiment n'en contient pas un autre.
+    """
+    dedans = _rect((E0, N0), 50.4, 12.0, 3.0, fermer=True)
+    dehors = _rect((E0, N0), 50.4, 15.3, 6.3, fermer=True)
+    scn = _Scene({"pdl": [{"pts": dehors, "couche": "VAL-PDL"},
+                          {"pts": dedans, "couche": "UNI_PDL"}]})
+    assert [o["couche"] for o in OT.englobants(scn)] == ["VAL-PDL"]
+
+    blocs, _ouv, registre = OT.ouvrages(scn, lambda x, y: 100.0, E0, N0,
+                                        verbose=False)
+    # Un seul poste monte, et c'est l'interieur.
+    assert [r["couche"] for r in registre] == ["UNI_PDL"]
+    # L'exterieur est devenu de la grave, a son aire exacte.
+    assert _aire_bloc(blocs["grave"]) == pytest.approx(15.3 * 6.3, rel=1e-6)
+
+
+def test_deux_ouvrages_voisins_mais_disjoints_restent_deux_ouvrages():
+    """Les trois PDL de Saint-Cyr s'aboutent sans se contenir."""
+    a = _rect((E0, N0), 64.1, 12.0, 3.0, fermer=True)
+    b = _rect((E0 + 4.0, N0 + 4.0), 64.1, 12.0, 1.5, fermer=True)
+    scn = _Scene({"pdl": [{"pts": a, "couche": "UNI_PDL"},
+                          {"pts": b, "couche": "UNI_PDL"}]})
+    assert OT.englobants(scn) == []

@@ -293,11 +293,52 @@ def _cap_cloture(scn, E, N, defaut=0.0):
     return meilleur
 
 
+def englobants(scn):
+    """Polygones de VOLUME qui en contiennent un autre : ce sont des plateformes.
+
+    ⚠️ UN PLAN DESSINE SOUVENT DEUX FOIS LE MEME OUVRAGE — son emprise batie et
+    la plateforme qui la porte — sur deux couches voisines. Sarnois IND10b en
+    donne le cas net : `UNI_PDL` fait 12,0 x 3,0 m, soit le gabarit UNITe au
+    centimetre, et `VAL-PDL` fait 15,3 x 6,3 m au MEME cap et a la MEME
+    distance, en le contenant ENTIEREMENT. Monter les deux donnait deux postes
+    empiles, dont le plus gros debordait a 65 % hors de l'enceinte — ce que le
+    controle de conformite a signale.
+
+    La nidification tranche sans avoir a deviner d'apres le nom de la couche :
+    un batiment n'en contient pas un autre, une plateforme si.
+
+    Rend la liste des contours a traiter comme surface dure.
+    """
+    from shapely.geometry import Polygon
+
+    cands = []
+    for cat in MONTAGE:
+        for o in scn.lignes.get(cat, []):
+            a = anneau(o["pts"])
+            if len(a) < 3:
+                continue
+            p = Polygon(a).buffer(0)
+            if p.is_valid and p.area > 1.0:
+                cands.append((p, o))
+    dehors = []
+    for p, o in cands:
+        if any(p is not q and p.contains(q.buffer(-0.05)) for q, _ in cands):
+            dehors.append(o)
+    return dehors
+
+
 def _polygones_durs(scn, E0, N0, dmax):
     """Polygones des surfaces dures A CREER, dans la portee."""
     from shapely.geometry import Polygon
 
     out = []
+    for o in englobants(scn):
+        a = anneau(o["pts"])
+        c = a.mean(axis=0)
+        if math.hypot(c[0] - E0, c[1] - N0) <= dmax:
+            p = Polygon(a).buffer(0)
+            if p.is_valid and p.area > 0.5:
+                out.append(p)
     cats = list(SURFACES) + ["sdis"]
     for cat in cats:
         for o in scn.lignes.get(cat, []):
@@ -407,8 +448,11 @@ def ouvrages(scn, sol_abs, E0, N0, parametres=None, dmax=400.0, verbose=True):
         compte["portail"] = compte.get("portail", 0) + 1
 
     # --- poste, conteneur, citerne, aire d'aspiration -----------------------
+    sauter = {id(o) for o in englobants(scn)}
     for cat, quoi in MONTAGE.items():
         for obj in scn.lignes.get(cat, []):
+            if id(obj) in sauter:
+                continue
             a = anneau(obj["pts"])
             if not len(a):
                 continue

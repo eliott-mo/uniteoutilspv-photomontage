@@ -20,9 +20,15 @@ CE QUI EST VÉRIFIÉ
 ------------------
 1. **Toute surface rendue est sur le plan.** Chaque triangle de sol doit tomber
    sur un polygone dur du plan. C'est le contrôle qui aurait pris les 356 m².
-2. **Rien ne sort de l'enceinte.** Un ouvrage dont l'emprise déborde la clôture
-   est faux, quelle qu'en soit la cause — c'était le cas de la bâche montée au
-   gabarit, à 15 % dehors.
+2. **Rien ne sort de l'enceinte QUE LE PLAN N'Y METTE.** Un ouvrage dont
+   l'emprise déborde la clôture est faux — c'était le cas de la bâche montée au
+   gabarit, à 15 % dehors. Mais certains ouvrages sont dehors *par
+   construction* : un poste de livraison doit rester accessible au
+   gestionnaire de réseau depuis la voie publique, une aire d'aspiration aux
+   pompiers. Mesuré sur Sarnois IND10b, `UNI_PDL` est à 100 % hors de
+   l'enceinte au plan ; le signaler était un faux positif, et un faux positif
+   répété quinze fois finit par être ignoré. On ne compare donc au grillage que
+   ce que le plan y mettait.
 3. **Ce qui est disjoint au plan reste disjoint au modèle.** Deux ouvrages qui
    ne se touchent pas sur le plan et s'interpénètrent dans la scène signalent
    une cote ou une orientation inventée.
@@ -102,6 +108,14 @@ def verifier(scene, scn, E0, N0, dmax=120.0):
     if lignes:
         p = Polygon(OT.anneau(lignes[0]["pts"])).buffer(0)
         enc = p if p.is_valid and p.area > 0 else None
+    # Ce que le PLAN place deja hors de l'enceinte : un debord n'y est pas une
+    # anomalie, c'est le projet.
+    hors_au_plan = None
+    for r in scene.get("registre", []):
+        pl = Polygon(r["plan"]).buffer(0)
+        if enc is not None and not pl.is_empty and                 pl.difference(enc).area > 0.5 * pl.area:
+            hors_au_plan = pl if hors_au_plan is None else hors_au_plan.union(pl)
+
     emprises = {}
     for b in scene["objets"]:
         mat = b["materiau"]
@@ -121,6 +135,8 @@ def verifier(scene, scn, E0, N0, dmax=120.0):
         if (enc is not None and mat not in SOLS
                 and mat not in ("grillage", "bois", "menuiserie")):
             dehors = proche.difference(enc.buffer(TOL_DEBORD))
+            if hors_au_plan is not None:
+                dehors = dehors.difference(hors_au_plan.buffer(2.0))
             if dehors.area > TOL_AIRE:
                 anomalies.append(
                     f"{mat} : {dehors.area:.0f} m2 hors de l'enceinte "

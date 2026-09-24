@@ -27,16 +27,29 @@ MOTIFS_LIGNES = {
     "voirie": ("voirie",),
     "haie": ("haie",),
     "pdl": ("pdl",),
-    "local": ("local", "stockage"),
+    "local": ("local",),
     "sdis": ("sdis",),
     "portail": ("portail",),
 }
 
 
+#: Categories qui sont des VOLUMES. Une couche de VRD n'en est jamais une.
+VOLUMES = ("pdl", "local", "sdis", "portail")
+
+
 def _categorie(couche):
-    """Categorie d'une couche, ou None."""
+    """Categorie d'une couche, ou None.
+
+    ⚠️ UNE COUCHE VRD N'EST JAMAIS UN VOLUME. « VRD » veut dire voirie et
+    reseaux divers : par definition des travaux de sol. Le motif « stockage »
+    attrapait `UNI_VRD_Stockage_Logistique` de Sarnois — une aire de 962 m2 —
+    et le montage en faisait un conteneur de 39 x 27 m. Le motif est resserre
+    sur « local », et la regle VRD garde le reste.
+    """
     lay = _sans_accents(couche).lower()
     for cat, motifs in MOTIFS_LIGNES.items():
+        if cat in VOLUMES and "vrd" in lay:
+            continue
         if any(_sans_accents(m).lower() in lay for m in motifs):
             return cat
     return None

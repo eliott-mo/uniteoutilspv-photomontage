@@ -117,6 +117,10 @@ SURFACES = ("piste", "plateforme", "voirie")
 #: pas ; plus haut, elles feraient un ressaut que le plan ne porte pas.
 EPAISSEUR_SURFACE = 0.04
 
+#: Part du plus petit polygone qu'un plus grand doit recouvrir pour etre sa
+#: plateforme plutot qu'un second ouvrage.
+RECOUVREMENT_PLATEFORME = 0.80
+
 
 def _sans_accents(t):
     for a, b in (("é", "e"), ("è", "e"), ("ê", "e"), ("à", "a"), ("ô", "o"),
@@ -322,8 +326,18 @@ def englobants(scn):
                 cands.append((p, o))
     dehors = []
     for p, o in cands:
-        if any(p is not q and p.contains(q.buffer(-0.05)) for q, _ in cands):
-            dehors.append(o)
+        for q, _ in cands:
+            if q is p or q.area >= p.area:
+                continue
+            # RECOUVRIR N'EST PAS CONTENIR, et il faut la version faible. Un
+            # bloc dessine souvent l'ouvrage en plusieurs contours qui se
+            # debordent un peu : celui du PTR de Sarnois en donne quatre, au
+            # meme cap, dont un de 10,0 x 3,0 m — le gabarit PTR exact — et un
+            # de 13,3 x 3,2 qui le couvre entierement sans le contenir au sens
+            # strict. La regle stricte laissait deux transformateurs.
+            if p.intersection(q).area >= RECOUVREMENT_PLATEFORME * q.area:
+                dehors.append(o)
+                break
     return dehors
 
 

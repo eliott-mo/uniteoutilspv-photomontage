@@ -26,7 +26,7 @@ MOTIFS_LIGNES = {
     "plateforme": ("plateforme",),
     "voirie": ("voirie",),
     "haie": ("haie",),
-    "pdl": ("pdl",),
+    "pdl": ("pdl", "pdt", "ptr"),
     "local": ("local",),
     "sdis": ("sdis",),
     "portail": ("portail",),
@@ -53,6 +53,25 @@ def _categorie(couche):
         if any(_sans_accents(m).lower() in lay for m in motifs):
             return cat
     return None
+
+
+#: Blocs dont la geometrie ne doit pas etre montee, et pourquoi.
+#:
+#: Un bloc porte souvent le DETAIL d'un ouvrage : sa cuve, son bac, ses cotes.
+#: Sur Sarnois IND10b, `CIT_RIGID_120m3 Bac de retention` est pose sur la
+#: couche `UNI_SDIS_Bache_incendie` et donnait un rectangle de 16,9 x 3,0 m
+#: monte comme une bache souple. Un bac de retention est un ouvrage de sol, pas
+#: une reserve d'eau.
+BLOCS_ECARTES = {
+    "retention": "bac de retention : ouvrage de sol, pas une reserve",
+    "bac de": "bac : ouvrage de sol, pas un volume",
+}
+
+
+def _bloc_ecarte(nom):
+    """Dit si un bloc est ecarte, d'apres son nom."""
+    n = _sans_accents(str(nom or "")).lower()
+    return any(m in n for m in BLOCS_ECARTES)
 
 
 def _sommets_hatch(chemin):
@@ -209,6 +228,49 @@ def lire(chemin):
             if len(pts) >= 3:
                 lignes[cat].append({"pts": pts, "fermee": True,
                                     "couche": e.dxf.layer, "forme": "hatch"})
+
+    # LES BLOCS COMPTENT AUSSI, et ils cachent parfois l'essentiel. A Sarnois
+    # IND10b, le portail, le poste de transformation et la batterie sont des
+    # INSERT : ne lire que polylignes et hachures les faisait disparaitre du
+    # montage. Le portail y ferait 93 px de large a 152 m sur la vue 1 — un
+    # ouvrage absent, et rien ne le signalait.
+    #
+    # Un bloc se DEVELOPPE : `virtual_entities` rend sa geometrie deja placee
+    # et tournee dans le repere du modele. On y applique la meme regle que sur
+    # le modelspace, mais DANS LE BLOC : ses hachures ne sont lues que s'il n'y
+    # porte aucune polyligne. Le bloc du PTR en a des deux sortes, celui du
+    # portail n'a que deux secteurs de battement.
+    for ins in msp.query("INSERT"):
+        cat = _categorie(ins.dxf.layer)
+        if not cat or _bloc_ecarte(ins.dxf.name):
+            continue
+        polys, hachs = [], []
+        try:
+            filles = list(ins.virtual_entities())
+        except Exception:                                     # noqa: BLE001
+            continue
+        for ve in filles:
+            if ve.dxftype() == "LWPOLYLINE":
+                p = [(float(x), float(y)) for x, y in ve.get_points("xy")]
+                if len(p) >= 3:
+                    polys.append((p, bool(ve.closed)))
+            elif ve.dxftype() == "POLYLINE" and not ve.is_3d_polyline:
+                p = [(float(v.dxf.location[0]), float(v.dxf.location[1]))
+                     for v in ve.vertices]
+                if len(p) >= 3:
+                    polys.append((p, bool(ve.is_closed)))
+            elif ve.dxftype() == "HATCH":
+                for chemin_h in ve.paths:
+                    q = _sommets_hatch(chemin_h)
+                    if len(q) >= 3:
+                        hachs.append(q)
+        for p, fermee in polys:
+            lignes[cat].append({"pts": p, "fermee": fermee,
+                                "couche": ins.dxf.layer, "forme": "bloc"})
+        if not polys:
+            for q in hachs:
+                lignes[cat].append({"pts": q, "fermee": True,
+                                    "couche": ins.dxf.layer, "forme": "bloc"})
 
     return Scene(tables=tables, lignes={k: v for k, v in lignes.items() if v},
                  topo=topo, source=str(chemin))

@@ -223,6 +223,36 @@ def _quad(coords):
     return [q[hauts[0]], q[hauts[1]], q[bas[1]], q[bas[0]]]
 
 
+def _reconstruire_plat(gpkg, p, couches, verbose):
+    """Refait les tables en 3D depuis `modules_pv`, pour un contrat plat."""
+    import numpy as np
+
+    import tables_plates
+    import terrain
+
+    if "modules_pv" not in couches:
+        raise ErreurAltitudeAbsente(
+            "tables sans Z, et pas de couche 'modules_pv' pour les "
+            "reconstruire. Un contrat plat n'est exploitable ici que s'il "
+            "porte l'empreinte de chaque module.")
+    with fiona.open(gpkg, layer="modules_pv") as src:
+        mods = [[(float(x), float(y))
+                 for x, y in f["geometry"]["coordinates"][0]] for f in src]
+    if not mods:
+        raise ErreurAltitudeAbsente("couche 'modules_pv' vide")
+
+    a = np.vstack([np.asarray(m, float) for m in mods])
+    mnt = terrain.charger_mnt(
+        (a[:, 0].min(), a[:, 1].min(), a[:, 0].max(), a[:, 1].max()),
+        pas=5.0, marge=150.0, verbose=verbose)
+    if verbose:
+        print(f"  contrat PLAT ({p.get('origine')}) : tables sans Z, "
+              f"reconstruction depuis {len(mods)} modules")
+    return tables_plates.reconstruire(
+        mods, p.get("parametres"), lambda x, y: float(mnt.altitude(x, y)),
+        verbose=verbose)
+
+
 def lire(dossier, verbose=True):
     """Lit un dossier de sortie de `generateur-dp` et renvoie une `Scene`."""
     dossier = Path(dossier)
@@ -237,7 +267,7 @@ def lire(dossier, verbose=True):
             f"aucune couche 'tables_pv' dans {gpkg.name} : le photomontage ne "
             "sait pas monter une scene sans tables.")
 
-    tables = []
+    tables, plat = [], False
     with fiona.open(gpkg, layer="tables_pv") as src:
         if str(src.crs) != CRS_ATTENDU:
             raise ErreurRepereContrat(
@@ -246,14 +276,22 @@ def lire(dossier, verbose=True):
         for f in src:
             anneau = f["geometry"]["coordinates"][0]
             if len(anneau[0]) < 3:
-                raise ErreurAltitudeAbsente(
-                    "geometrie de table sans Z. Le photomontage a besoin de "
-                    "l'altitude par sommet pour poser l'inclinaison ; un "
-                    "contrat ecrit a plat n'est pas exploitable ici.")
+                plat = True
+                break
             tables.append(lecture_dxf.Table(q=_quad(anneau)))
+
+    if plat:
+        # UN CONTRAT PLAT SE RECONSTRUIT, IL NE SE REFUSE PLUS. Un export
+        # HelioScope n'a pas de Z sur ses tables, et c'est le Z qui donne
+        # l'inclinaison. Le refuser revenait a exiger un DXF du bureau
+        # d'etudes ; or le but est justement de s'en passer. `tables_plates`
+        # refait la troisieme dimension a partir des empreintes de modules,
+        # de l'inclinaison du contrat et du modele de terrain.
+        tables = _reconstruire_plat(gpkg, p, couches, verbose)
     if not tables:
         raise ErreurTablesAbsentes(f"couche 'tables_pv' vide dans {gpkg.name}")
-    _attribuer_formats(tables, _formats(p), verbose)
+    if not plat:
+        _attribuer_formats(tables, _formats(p), verbose)
 
     lignes, ignorees = {}, {}
     for couche in sorted(couches - {"tables_pv"}):

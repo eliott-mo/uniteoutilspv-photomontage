@@ -57,3 +57,7 @@ venv/
 .env
 .DS_Store
 Thumbs.db
+
+# Les dossiers de projet ne sont pas dans le depot : plans du BE, reportages
+# photo, emprises. Meme raison que exemples/ — des donnees de client.
+projets/

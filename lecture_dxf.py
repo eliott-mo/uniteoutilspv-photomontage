@@ -155,6 +155,87 @@ def _quad_depuis_polyline(e):
     return pts if len(pts) == 4 else None
 
 
+def _quads_depuis_lignes(msp, tol=3):
+    """Tables dessinees en QUATRE SEGMENTS, et non en polyligne ni en bloc.
+
+    Troisieme structure rencontree, apres les blocs INSERT de Sarnois et les
+    POLYLINE 3D de Saint-Cyr : les plans du BE sortis de PVcase en mode
+    « optimised » ecrivent chaque table en quatre LINE independantes. Elles
+    portent bien le Z — l'inclinaison y ressort a 15,0 degres exactement — mais
+    aucune entite ne les relie : c'est la CONNEXITE DES EXTREMITES qui fait la
+    table.
+
+    Mesure : 524 segments donnent 131 quadrilateres fermes a Bedarieux, 316 en
+    donnent 79 a Auzainvilliers. Tous a quatre segments et quatre sommets, sans
+    exception — un plan de tables n'a pas de raison d'etre irregulier, et une
+    composante qui ne ferait pas un quadrilatere signalerait autre chose sur la
+    meme couche.
+    """
+    segs = []
+    for e in msp.query("LINE"):
+        if MOTIF_TABLES not in e.dxf.layer:
+            continue
+        a = tuple(round(float(v), tol) for v in e.dxf.start)
+        b = tuple(round(float(v), tol) for v in e.dxf.end)
+        if a != b:
+            segs.append((a, b))
+    if not segs:
+        return []
+
+    voisins = {}
+    for i, (a, b) in enumerate(segs):
+        voisins.setdefault(a, []).append(i)
+        voisins.setdefault(b, []).append(i)
+
+    vu, quads = set(), []
+    for depart in range(len(segs)):
+        if depart in vu:
+            continue
+        pile, comp = [depart], []
+        while pile:
+            j = pile.pop()
+            if j in vu:
+                continue
+            vu.add(j)
+            comp.append(j)
+            for p in segs[j]:
+                pile += [k for k in voisins[p] if k not in vu]
+        sommets = {p for j in comp for p in segs[j]}
+        if len(comp) != 4 or len(sommets) != 4:
+            continue
+        # Parcours du cycle : on suit les aretes de sommet en sommet.
+        adj = {}
+        for j in comp:
+            a, b = segs[j]
+            adj.setdefault(a, []).append(b)
+            adj.setdefault(b, []).append(a)
+        ordre = [next(iter(sommets))]
+        while len(ordre) < 4:
+            suite = [p for p in adj[ordre[-1]] if p not in ordre]
+            if not suite:
+                break
+            ordre.append(suite[0])
+        if len(ordre) != 4:
+            continue
+        quads.append(_ordonner_quad(ordre))
+    return quads
+
+
+def _ordonner_quad(pts):
+    """Tourne un cycle de 4 sommets pour mettre les deux plus HAUTS devant.
+
+    `Table` attend l'ordre haut, haut, bas, bas, et la rotation preserve
+    l'adjacence — contrairement a un tri par altitude, qui croiserait le quad.
+    """
+    z = [p[2] for p in pts]
+    for d in range(4):
+        r = [pts[(d + k) % 4] for k in range(4)]
+        if min(r[0][2], r[1][2]) > max(r[2][2], r[3][2]) - 1e-6:
+            return r
+    # A plat ou en biais : on rend le cycle tel quel, `lire` levera.
+    return list(pts)
+
+
 def _rows_cols(nom):
     m = re.match(r"(\d+)P(\d+)", nom or "")
     return (int(m.group(1)), int(m.group(2))) if m else (2, 26)
@@ -185,6 +266,10 @@ def lire(chemin):
             q = _quad_depuis_polyline(e)
             if q:
                 tables.append(Table(q=q))
+    # structure 3 : quatre LINE par table (PVcase « optimised », plans du BE)
+    if not tables:
+        for q in _quads_depuis_lignes(msp):
+            tables.append(Table(q=q))
     if not tables:
         raise RuntimeError(f"aucune table trouvee (couches contenant {MOTIF_TABLES!r})")
 

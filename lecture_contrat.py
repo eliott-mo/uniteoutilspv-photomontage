@@ -86,6 +86,13 @@ CORRESPONDANCE = {
     "pdl_ptr": "pdl",
     "bache_incendie": "sdis",
     "aire_aspiration": "sdis",
+    # BESS. Les trois categories sont desormais montees, aux cotes du tableau
+    # bilan : conteneur 20 pieds de 6 x 3 x 3 m, bache souple de 120 m3 au
+    # gabarit citerne (11,7 x 8,9 x 1,5), et zone de remise en surface dure.
+    # Voir `ouvrages_techniques.MONTAGE`.
+    "bess": "bess",
+    "citerne_refroidissement": "refroidissement",
+    "zone_remise": "remise",
 }
 
 #: Catégories sciemment écartées, avec leur raison. Elles sont listées pour que
@@ -101,15 +108,16 @@ ECARTEES = {
     "limite_paddock": "cloture legere non modelisee a ce jour",
     "zone_contention": "sans volume modelise a ce jour",
     "bac_equarrissage": "sans volume modelise a ce jour",
-    "citerne_refroidissement": "sans volume modelise a ce jour",
-    "zone_remise": "sans volume modelise a ce jour",
-    "bess": "sans volume modelise a ce jour",
+    # ⚠️ `bac_retention` reste ecarte, et ce n'est pas un oubli. Son MTEXT au
+    # plan dit « Bac de retention 120m3 » : c'est un CREUX dans le sol, de
+    # 16,90 x 3,00 m a Auzainvilliers. Le rendre en dalle surelevee de 4 cm
+    # serait un ressaut que le plan ne porte pas, et on n'a pas sa profondeur.
+    "bac_retention": "creux dans le sol : ni volume, ni dalle, profondeur inconnue",
     # INSTALLATIONS DE CHANTIER : portees au dossier DP, qui doit les declarer,
     # mais absentes d'un montage d'insertion paysagere, lequel montre l'etat
     # ACHEVE. Sur Sarnois elles pesaient 46 objets.
     "base_vie": "installation de chantier, temporaire",
     "stockage_chantier": "installation de chantier, temporaire",
-    "bac_retention": "sans volume modelise a ce jour",
 }
 
 

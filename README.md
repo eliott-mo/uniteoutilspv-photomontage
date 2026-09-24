@@ -223,6 +223,32 @@ clarté : un peuplier d'hiver au soleil est plus *clair* que le ciel (190 contre
 un ciel tient dans six niveaux de R−B (−104 à −98) là où le rideau d'arbres va de −82
 à −19.
 
+**Un bloc de fabricant dessine l'ouvrage et ses entrailles.** `BESS Skyray` porte 77
+contours : le conteneur de 6,06 × 3,00 m, mais aussi sa paroi intérieure, trente-six
+racks de 2,32 × 0,12 m et leur boulonnerie de 5 cm. Montés, cela faisait trente-huit
+conteneurs empilés dans un seul — et la règle de nidification habituelle ne sait pas
+trancher ici : elle tient le contour englobant pour une plateforme, ce qui est vrai d'une
+dalle autour d'un poste et faux d'une paroi autour d'un rack, donc elle garderait les
+racks et jetterait le conteneur. Ce qui sépare les deux cas se compte : le plus chargé
+des **symboles de plan** du corpus en porte 10, le **dessin de produit** en porte 77.
+
+**`virtual_entities` ne descend que d'un niveau.** Sur Sarnois IND10b le conteneur
+batterie est imbriqué deux crans plus bas, dans `UNI_Batterie` puis `BESS Skyray` : sans
+descendre, on monte l'enveloppe de 8,06 × 6,00 m, soit un conteneur 61 % trop grand, et
+rien ne le signale.
+
+**Un segment n'est pas un ouvrage.** Deux polylignes de *deux* points sur la couche de
+refroidissement de Sarnois, longues de 8,944 m — c'est-à-dire exactement
+`hypot(8,00 ; 4,00)`, les diagonales du rectangle voisin. Sans contour, `rectangle_mini`
+rend `None`, le gabarit prend le relais, et chaque diagonale devient une réserve souple de
+120 m³ : trois bâches là où le bilan en compte une.
+
+**Une citerne souple se dessine en SPLINE**, parce qu'elle a physiquement des coins
+arrondis — et `lecture_dxf` ne lisait pas les splines. La citerne de refroidissement de
+120 m³ était donc purement absente des deux plans qui en portent une. Aplatie, elle mesure
+11,70 × 9,32 m sur les deux, soit le gabarit UNITe (11,7 × 8,9, 104 m² au bilan) au
+centimètre sur la longueur.
+
 **Un heredoc Bash long se tronque.** Au-delà d'une centaine de lignes, écrire le fichier,
 pas le coller dans le shell.
 
@@ -291,3 +317,15 @@ du capteur. Les six sont détectées.
   faudrait une géométrie de feuille pour le premier mètre.
 - **La position GPS d'un téléphone vaut 5 à 10 m.** Négligeable à 100-400 m, déterminante
   quand la clôture passe à 3,8 m.
+- **La « zone de remise » du BESS est prise pour une aire durcie, pas pour un volume.**
+  12,01 × 3,00 m sur les trois plans qui en portent une, soit l'empreinte exacte d'un
+  conteneur 40 pieds — et c'est justement pourquoi le doute existe. Le bilan la compte en
+  *surface* (« Zone de remise (36 m²) ») là où il compte les conteneurs en *nombre*, et la
+  liste séparément du « local de stockage matériel », qui fait aussi 36 m². Le doute est
+  assumé dans ce sens-là : monter un volume de 3 m de haut qui n'existe pas se voit sur un
+  photomontage, poser une dalle plate là où le sol est nu ne se voit à aucune distance
+  utile.
+- **Le bac de rétention n'est pas monté du tout.** Son MTEXT dit « Bac de rétention
+  120 m³ » : c'est un *creux* dans le sol, 16,90 × 3,00 m à Auzainvilliers. Le rendre en
+  dalle surélevée de 4 cm serait un ressaut que le plan ne porte pas, et on n'a pas sa
+  profondeur.

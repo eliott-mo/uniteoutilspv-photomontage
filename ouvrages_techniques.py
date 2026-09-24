@@ -91,15 +91,43 @@ GABARITS = {
     "local": dict(L=6.06, l=2.44, h=2.59),    # conteneur 20 pieds
     "citerne": dict(L=11.7, l=8.9, h=1.50),   # reserve souple ~120 m3
     "portail": dict(L=7.0, h=2.0),
+    # Tableau bilan AUZ V3, feuille « Batteries de stockage » : « Conteneur
+    # 20 pieds (6x3x3m) ». Le plan le confirme au centimetre — le bloc
+    # `BESS Skyray` mesure 6,06 x 3,00 m, soit 18,2 m2 pour les 18 m2 comptes
+    # a la feuille « Projet ». La HAUTEUR, elle, ne vient que d'ici : c'est
+    # 3,00 m, et non les 2,59 m d'un vrai conteneur 20 pieds maritime.
+    "bess": dict(L=6.0, l=3.0, h=3.0),
 }
 
 #: Categorie du plan -> ouvrage a monter. Le portail n'y est pas : il se lit
 #: sur la clôture, pas sur un polygone pose a cote.
+#:
+#: `refroidissement` monte une CITERNE et non un groupe froid : le MTEXT de la
+#: couche dit « Citerne Souple / 120m3 / Refroidissement des Conteneurs ». Le
+#: contour aplati mesure 11,70 x 9,32 m sur les deux plans qui en portent une,
+#: soit le gabarit `citerne` — 104 m2 au bilan — au centimetre sur la longueur.
+#: C'est donc la meme bache que celle du SDIS, a un autre usage.
 MONTAGE = {
     "pdl": "poste",
     "local": "conteneur",
     "sdis": "citerne",
+    "bess": "bess",
+    "refroidissement": "citerne",
 }
+
+#: Part de l'aire du plus grand contour d'une couche de citernes au-dessous de
+#: laquelle un contour n'est plus une citerne mais le sol qui la borde.
+#:
+#: La couche `UNI_BESS_Refroidissement` de Sarnois porte DEUX choses : la bache
+#: de 108,9 m2 et, a cote d'elle sans la recouvrir, un rectangle de 8,00 x 4,00
+#: — 32 m2, soit 29 % — que la version IND10b trace avec ses deux diagonales,
+#: le symbole de surface que ce module note deja pour l'aire d'aspiration du
+#: SDIS. Monte en bache, il donnait une seconde reserve de 120 m3 la ou le
+#: bilan n'en compte qu'une.
+#:
+#: Le seuil laisse passer DEUX baches identiques — un site a deux BESS en aurait
+#: deux — et ne coupe qu'entre 29 % et 100 %, ou il y a un facteur trois.
+PART_CITERNE = 0.60
 
 #: Tolerance, en metres, pour reconnaitre qu'une pointe de vantail est le bout
 #: d'un segment de clôture.
@@ -110,7 +138,15 @@ PORTAIL_MIN, PORTAIL_MAX = 2.0, 12.0
 
 #: Categories du plan qui sont des SURFACES DURES : elles se rendent telles
 #: quelles, unies entre elles, et rien d'autre ne pose de grave.
-SURFACES = ("piste", "plateforme", "voirie")
+#: La « zone de remise » du BESS en fait partie : 12,01 x 3,00 m sur les trois
+#: plans qui en portent une, 36 m2 comptes au bilan — et comptes en SURFACE, la
+#: ou les conteneurs y sont comptes en NOMBRE. C'est l'aire durcie ou l'on pose
+#: un conteneur a la grue, pas un conteneur de plus.
+#:
+#: ⚠️ Le doute subsiste et il est assume dans ce sens-la : monter un volume de
+#: 3 m de haut qui n'existe pas se voit sur un photomontage, poser une dalle
+#: plate la ou le sol est nu ne se voit a aucune distance utile.
+SURFACES = ("piste", "plateforme", "voirie", "remise")
 
 #: Surelevation des surfaces dures, en metres. Posees au ras du terrain, elles
 #: disparaitraient dans le bruit du capteur d'ombre et leur bord ne se lirait
@@ -341,12 +377,35 @@ def englobants(scn):
     return dehors
 
 
+def aires_de_citerne(scn, cat="refroidissement", part=PART_CITERNE):
+    """Contours d'une couche de citernes qui sont du SOL, pas une reserve.
+
+    Voir `PART_CITERNE` : la couche porte la bache ET l'aire qui la borde, sans
+    que le nom de la couche ni la nidification ne les separent — les deux
+    contours ne se recouvrent pas du tout.
+    """
+    from shapely.geometry import Polygon
+
+    cands = []
+    for o in scn.lignes.get(cat, []):
+        a = anneau(o["pts"])
+        if len(a) < 3:
+            continue
+        p = Polygon(a).buffer(0)
+        if p.is_valid and p.area > 1.0:
+            cands.append((p.area, o))
+    if not cands:
+        return []
+    plafond = max(a for a, _ in cands)
+    return [o for a, o in cands if a < part * plafond]
+
+
 def _polygones_durs(scn, E0, N0, dmax):
     """Polygones des surfaces dures A CREER, dans la portee."""
     from shapely.geometry import Polygon
 
     out = []
-    for o in englobants(scn):
+    for o in englobants(scn) + aires_de_citerne(scn):
         a = anneau(o["pts"])
         c = a.mean(axis=0)
         if math.hypot(c[0] - E0, c[1] - N0) <= dmax:
@@ -462,13 +521,20 @@ def ouvrages(scn, sol_abs, E0, N0, parametres=None, dmax=400.0, verbose=True):
         compte["portail"] = compte.get("portail", 0) + 1
 
     # --- poste, conteneur, citerne, aire d'aspiration -----------------------
-    sauter = {id(o) for o in englobants(scn)}
+    sauter = {id(o) for o in englobants(scn) + aires_de_citerne(scn)}
     for cat, quoi in MONTAGE.items():
         for obj in scn.lignes.get(cat, []):
             if id(obj) in sauter:
                 continue
+            # ⚠️ UN SEGMENT N'EST PAS UN OUVRAGE. La couche
+            # `UNI_BESS_Refroidissement` de Sarnois IND10b porte deux
+            # polylignes de DEUX points, longues de 8,944 m — soit exactement
+            # hypot(8,00 ; 4,00), les diagonales du rectangle voisin. Sans
+            # contour, `rectangle_mini` rend None, on retombait sur le gabarit,
+            # et chaque diagonale devenait une reserve souple de 120 m3 : trois
+            # baches la ou le bilan en compte une.
             a = anneau(obj["pts"])
-            if not len(a):
+            if len(a) < 3:
                 continue
             E, N = float(a[:, 0].mean()), float(a[:, 1].mean())
             if math.hypot(E - E0, N - N0) > dmax:
@@ -520,6 +586,20 @@ def ouvrages(scn, sol_abs, E0, N0, parametres=None, dmax=400.0, verbose=True):
                 compte["local"] = compte.get("local", 0) + 1
                 _pose("conteneur", g["L"], g["l"])
 
+            elif quoi == "bess":
+                # `bess=True` ajoute la grille de ventilation en pignon, qui
+                # est ce qui distingue a l'oeil un conteneur batterie d'un
+                # local de stockage — meme gabarit, meme bardage.
+                g = _cotes(parametres, "bess", GABARITS["bess"], mesure)
+                for cible, part in zip(
+                        ("tole", "menuiserie", "coin", "creux"),
+                        EE.geometrie_conteneur((E, N), ang, z, g["L"], g["l"],
+                                               g["h"], bess=True,
+                                               oeil=(E0, N0))):
+                    fusion(cible, part)
+                compte["bess"] = compte.get("bess", 0) + 1
+                _pose("conteneur BESS", g["L"], g["l"])
+
             elif quoi == "citerne":
                 # LA COUCHE TRANCHE : une aire d'aspiration est une surface
                 # dure, une bache incendie est un volume souple. Les deux
@@ -535,7 +615,9 @@ def ouvrages(scn, sol_abs, E0, N0, parametres=None, dmax=400.0, verbose=True):
                 pvc, _plat = EE.geometrie_citerne(geo, z, cote=(g["L"], g["l"]),
                                                   haut=g["h"], cle="c")
                 fusion("pvc", pvc)
-                compte["sdis/bache"] = compte.get("sdis/bache", 0) + 1
+                quelle = ("bache de refroidissement"
+                          if cat == "refroidissement" else "sdis/bache")
+                compte[quelle] = compte.get(quelle, 0) + 1
                 _pose("citerne", g["L"], g["l"])
 
     if verbose:

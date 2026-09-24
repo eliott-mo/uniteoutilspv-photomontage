@@ -30,11 +30,30 @@ MOTIFS_LIGNES = {
     "local": ("local",),
     "sdis": ("sdis",),
     "portail": ("portail",),
+    # ⚠️ LE MOTIF N'EST PAS « BESS », ET CE N'EST PAS UN DETAIL. Un plan
+    # PVcase porte `PVcase AC Cables (AC BESS - Transformer)` et cinq autres
+    # couches de cables du meme genre : un motif « bess » nu les attraperait
+    # toutes et monterait des conteneurs sur des tirees de cable. Les motifs
+    # portent donc sur l'OUVRAGE — batterie, refroidissement, remise — et
+    # jamais sur le lot.
+    #
+    # `UNI_BESS_PTR` tombe volontairement dans « pdl » avant d'arriver ici :
+    # le PTR associe au BESS est un poste, et le bilan le compte comme tel
+    # (« Nombre de PTR associes | 1 »).
+    #
+    # ⚠️ `UNI_BESS_Retention` n'est mappe par rien, et c'est voulu. Son MTEXT
+    # dit « Bac de retention 120m3 » : c'est un CREUX dans le sol. Le rendre
+    # en dalle de grave surelevee de 4 cm serait un ressaut que le plan ne
+    # porte pas ; ne rien rendre est le seul choix honnete tant qu'on n'a pas
+    # sa profondeur.
+    "bess": ("bess_batterie", "bess batterie", "batterie"),
+    "refroidissement": ("refroidissement",),
+    "remise": ("remise",),
 }
 
 
 #: Categories qui sont des VOLUMES. Une couche de VRD n'en est jamais une.
-VOLUMES = ("pdl", "local", "sdis", "portail")
+VOLUMES = ("pdl", "local", "sdis", "portail", "bess", "refroidissement")
 
 
 def _categorie(couche):
@@ -72,6 +91,139 @@ def _bloc_ecarte(nom):
     """Dit si un bloc est ecarte, d'apres son nom."""
     n = _sans_accents(str(nom or "")).lower()
     return any(m in n for m in BLOCS_ECARTES)
+
+
+#: Fleche maximale, en metres, quand on aplatit une spline en polyligne.
+FLECHE_SPLINE = 0.10
+
+
+def _sommets_spline(e):
+    """Sommets d'une spline, aplatie en polyligne. Liste vide si on ne sait pas.
+
+    ⚠️ UNE CITERNE SOUPLE SE DESSINE EN SPLINE, parce qu'elle a physiquement
+    des coins arrondis. C'est le cas des deux plans qui portent un BESS :
+    `UNI_BESS_Refroidissement` n'y porte AUCUN contour droit exploitable — a
+    Auzainvilliers une seule spline et une hachure a bords splines, a Sarnois
+    huit splines dans un bloc. Sans cette lecture, la citerne de 120 m3 est
+    purement absente du montage, et rien ne le signale.
+
+    Mesure : aplaties, elles donnent 11,70 x 9,32 m sur les DEUX plans, soit le
+    gabarit UNITe (11,7 x 8,9, 104 m2 au bilan) au centimetre sur la longueur.
+
+    C'est aussi le seul endroit du corpus ou une spline tombe sur une couche
+    mappee : la lire ne change rien ailleurs.
+    """
+    try:
+        from ezdxf import path as _chemin
+        return [(float(v.x), float(v.y))
+                for v in _chemin.make_path(e).flattening(FLECHE_SPLINE)]
+    except Exception:                                         # noqa: BLE001
+        return []
+
+
+def _chainer(morceaux, tol=1e-3):
+    """Joint des troncons qui partagent leurs bouts. Rend des contours.
+
+    Une citerne souple n'est pas dessinee d'un trait : le bloc
+    `UNI_Refroidissement` de Sarnois la decoupe en huit splines — quatre cotes
+    droits et quatre coins arrondis — qui se suivent bout a bout et bouclent.
+    Prises separement, elles donnent huit contours degeneres d'aire nulle ;
+    chainees, le contour ferme de 11,70 x 9,32 m.
+
+    A Auzainvilliers la meme citerne tient en UNE spline fermee. Le chainage
+    traite les deux cas sans avoir a les distinguer.
+    """
+    restants = [list(m) for m in morceaux if len(m) >= 2]
+    contours = []
+    while restants:
+        c = restants.pop(0)
+        colle = True
+        while colle:
+            colle = False
+            for i, m in enumerate(restants):
+                for bout, suite in ((m[0], m), (m[-1], m[::-1])):
+                    if math.dist(c[-1], bout) <= tol:
+                        c += suite[1:]
+                        restants.pop(i)
+                        colle = True
+                        break
+                if colle:
+                    break
+        contours.append(c)
+    return contours
+
+
+#: Nombre de contours au-dela duquel un bloc est un DESSIN DE PRODUIT et non
+#: un symbole de plan. Mesure sur les sept plans du corpus : le plus charge des
+#: symboles dessines par un bureau d'etudes en porte 10 (`UNI_PDT`), le dessin
+#: de produit `BESS Skyray` en porte 77. Le seuil tient au milieu du fosse,
+#: avec un facteur 2 d'un cote et 4 de l'autre.
+DETAIL_BLOC = 20
+
+
+def _contour_produit(polys):
+    """Ne garde que l'enveloppe d'un bloc quand c'est un dessin de produit.
+
+    ⚠️ UN BLOC DE FABRICANT DESSINE L'OUVRAGE ET SES ENTRAILLES. `BESS Skyray`
+    porte 77 contours : le conteneur de 6,06 x 3,00 m — 18,2 m2, soit le
+    « conteneur 20 pieds (6x3x3m) » du tableau bilan au centimetre — mais
+    aussi sa paroi interieure, trente-six racks de 2,32 x 0,12 m et leur
+    boulonnerie de 5 cm. Montes, cela fait trente-huit conteneurs empiles dans
+    un seul.
+
+    La regle de nidification habituelle (`englobants`) ne sait pas trancher
+    ici : elle tient le contour englobant pour une plateforme, ce qui est vrai
+    d'une dalle autour d'un poste et faux d'une paroi autour d'un rack. Elle
+    garderait donc les racks et jetterait le conteneur.
+
+    On tranche donc en amont, sur ce qui separe VRAIMENT les deux cas : un
+    symbole de plan tient en quelques contours, un dessin de produit en porte
+    des dizaines.
+    """
+    if len(polys) <= DETAIL_BLOC:
+        return polys
+    from shapely.geometry import Polygon
+
+    def aire(p):
+        g = Polygon(p[0]).buffer(0)
+        return g.area if g.is_valid else 0.0
+
+    return [max(polys, key=aire)]
+
+
+def _filles(ins, profondeur=3, nom=None):
+    """Geometrie d'un bloc, EN DESCENDANT dans les blocs imbriques.
+
+    ⚠️ `virtual_entities` ne descend QUE D'UN NIVEAU, et l'essentiel est
+    parfois un cran plus bas. Sur Sarnois IND10b, `UNI_BESS_Batterie` est un
+    INSERT du bloc `UNI_Batterie`, qui porte l'enveloppe de 8,06 x 6,00 m et,
+    imbrique dedans, le bloc `BESS Skyray` ou se trouve le conteneur reel de
+    6,1 x 3,0 m. Sans descendre, on monte l'enveloppe : un conteneur 61 % trop
+    grand, et rien ne le signale.
+
+    Sur Auzainvilliers le meme `BESS Skyray` est pose directement au
+    modelspace : les deux plans se lisent alors pareil, et `englobants` fait
+    son travail des deux cotes — l'enveloppe devient la dalle, le bloc devient
+    le volume.
+
+    Mesure avant d'y toucher : sur les sept plans du corpus, AUCUN INSERT
+    imbrique ne tombe sur une couche mappee aujourd'hui. La descente est donc
+    inerte partout, sauf la ou elle est necessaire.
+
+    Rend des couples (nom du bloc qui dessine l'entite, entite).
+    """
+    nom = nom if nom is not None else str(ins.dxf.name)
+    try:
+        filles = list(ins.virtual_entities())
+    except Exception:                                         # noqa: BLE001
+        return []
+    out = []
+    for ve in filles:
+        if ve.dxftype() != "INSERT":
+            out.append((nom, ve))
+        elif profondeur > 0 and not _bloc_ecarte(ve.dxf.name):
+            out += _filles(ve, profondeur - 1, str(ve.dxf.name))
+    return out
 
 
 def _sommets_hatch(chemin):
@@ -291,6 +443,13 @@ def lire(chemin):
             lignes[cat].append({"pts": pts, "fermee": bool(e.closed),
                                 "couche": e.dxf.layer})
 
+    for e in msp.query("SPLINE"):
+        cat = _categorie(e.dxf.layer)
+        pts = _sommets_spline(e) if cat else []
+        if len(pts) >= 3:
+            lignes[cat].append({"pts": pts, "fermee": True,
+                                "couche": e.dxf.layer, "forme": "spline"})
+
     # LES HATCH COMPTENT, MAIS SEULEMENT LA OU ILS SONT LE SEUL TRACE. A
     # Saint-Cyr, la couche `UNI_portail` ne porte aucune polyligne : six HATCH,
     # neuf LINE et six ARC. Ne lire que les polylignes revenait a dire qu'il
@@ -329,13 +488,19 @@ def lire(chemin):
         cat = _categorie(ins.dxf.layer)
         if not cat or _bloc_ecarte(ins.dxf.name):
             continue
-        polys, hachs = [], []
-        try:
-            filles = list(ins.virtual_entities())
-        except Exception:                                     # noqa: BLE001
-            continue
-        for ve in filles:
-            if ve.dxftype() == "LWPOLYLINE":
+        # On trie PAR BLOC QUI DESSINE, pas par INSERT de tete : la regle des
+        # hachures et celle du dessin de produit, ci-dessous, se jugent l'une
+        # et l'autre sur le bloc, et a Sarnois l'enveloppe et le conteneur
+        # sont dessines par deux blocs differents sous un seul INSERT.
+        par_bloc = {}
+        for nom_bloc, ve in _filles(ins):
+            polys, hachs, splines = par_bloc.setdefault(nom_bloc,
+                                                        ([], [], []))
+            if ve.dxftype() == "SPLINE":
+                p = _sommets_spline(ve)
+                if len(p) >= 2:
+                    splines.append(p)
+            elif ve.dxftype() == "LWPOLYLINE":
                 p = [(float(x), float(y)) for x, y in ve.get_points("xy")]
                 if len(p) >= 3:
                     polys.append((p, bool(ve.closed)))
@@ -349,12 +514,14 @@ def lire(chemin):
                     q = _sommets_hatch(chemin_h)
                     if len(q) >= 3:
                         hachs.append(q)
-        for p, fermee in polys:
-            lignes[cat].append({"pts": p, "fermee": fermee,
-                                "couche": ins.dxf.layer, "forme": "bloc"})
-        if not polys:
-            for q in hachs:
-                lignes[cat].append({"pts": q, "fermee": True,
+        for polys, hachs, splines in par_bloc.values():
+            for c in _chainer(splines):
+                if len(c) >= 3:
+                    polys.append((c, True))
+            if not polys:
+                polys = [(q, True) for q in hachs]
+            for p, fermee in _contour_produit(polys):
+                lignes[cat].append({"pts": p, "fermee": fermee,
                                     "couche": ins.dxf.layer, "forme": "bloc"})
 
     return Scene(tables=tables, lignes={k: v for k, v in lignes.items() if v},

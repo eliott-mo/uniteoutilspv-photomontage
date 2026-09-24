@@ -30,6 +30,48 @@ Trois choses valent d'être demandées **avant** de commencer, parce qu'elles co
 
 ---
 
+## Avant tout : le point de vue est-il exploitable ?
+
+C'est la première question, elle coûte une seconde, et elle ne demande même pas la
+photo — seulement la position.
+
+```bash
+streamlit run app.py                     # interface, pour un chef de projet
+python garde_prise_de_vue.py plan.dxf photo.jpg          # ou en ligne de commande
+```
+
+Le pilote de Saint-Cyr a coûté quatre allers-retours et n'a rien livré : le premier
+ouvrage visible y était à **2,4 m** et **9,4 m**, contre **20 m** sur les deux vues de
+Sarnois qui, elles, ont été livrées.
+
+| vue | premier ouvrage visible | clôture de 2 m | déplacement dû au GPS |
+|---|---|---|---|
+| Sarnois PV9 — livré | 21,4 m | 8,6 % | 2,3 % |
+| Sarnois PV10 — livré | 20,0 m | 9,2 % | 2,6 % |
+| Saint-Cyr PV3 — abandonné | 9,4 m | 18,8 % | 13,6 % |
+| Saint-Cyr PV4 — abandonné | 2,4 m | 75,3 % | 191,7 % |
+
+Les seuils sont calés sur ces quatre cas, là où l'écart est le plus large. Le critère
+décisif n'est pas la taille apparente mais l'**incertitude de position** : la base d'un
+ouvrage à la distance *d* se projette en `horizon + f·h/d`, donc une erreur δ la déplace
+de `f·h·δ/d²` pixels — en **carré inverse** de la distance. C'est pourquoi les mêmes
+outils marchent à 20 m et échouent à 2,4 m alors que rien d'autre n'a changé.
+
+Deux pièges relevés en écrivant ce contrôle :
+
+- **ce qui compte est dans le cadre, pas autour.** Une première version mesurait la
+  distance à l'ouvrage le plus proche *du point de vue* et recalait Sarnois : les quatre
+  vues sont au bord d'un chemin, donc à trois mètres d'une clôture, souvent dans le dos.
+- **une polyligne se juge sur sa longueur, pas sur ses sommets.** Une clôture de trois
+  cents mètres peut n'avoir que quatre sommets ; le brin qui passe à deux mètres de
+  l'objectif a ses extrémités à cent. Les tracés sont donc densifiés au mètre.
+
+Et **ce qui n'est pas un défaut** : que le projet ne tienne pas entier dans le cadre.
+Sarnois PV10 n'en montre que 26 % et a été livré — une centrale de quatre hectares vue
+de son bord couvre 359°, et c'est bien pour cela qu'un dossier porte plusieurs vues.
+
+---
+
 ## La chaîne
 
 ```

@@ -1,0 +1,975 @@
+<!doctype html>
+<html lang="fr" xmlns:mso="urn:schemas-microsoft-com:office:office" xmlns:msdt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882">
+<head>
+<meta charset="utf-8">
+<title>__TITRE__</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#141414; color:#ddd; font:13px/1.45 system-ui, sans-serif;
+         display:flex; height:100vh; overflow:hidden; }
+  #panneaux { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .vue { flex:1; position:relative; overflow:hidden; border-bottom:1px solid #333; min-height:0; }
+  .vue canvas { position:absolute; inset:0; width:100%; height:100%; cursor:crosshair; display:block; }
+  .etiquette { position:absolute; top:6px; left:8px; z-index:3; background:rgba(0,0,0,.65);
+               padding:3px 8px; border-radius:3px; font-size:12px; pointer-events:none; }
+  .aide { position:absolute; bottom:6px; left:8px; z-index:3; background:rgba(0,0,0,.6);
+          padding:3px 8px; border-radius:3px; font-size:11px; color:#aaa; pointer-events:none; }
+  #panneau { width:390px; flex:none; padding:12px 14px; background:#1e1e1e; overflow:auto;
+             border-left:1px solid #333; }
+  h1 { font-size:14px; margin:0 0 3px; }
+  h2 { font-size:11px; color:#999; margin:12px 0 5px; text-transform:uppercase; letter-spacing:.05em; }
+  .sub { color:#8a8a8a; margin:0 0 8px; font-size:11.5px; }
+  button, select { margin:3px 5px 0 0; padding:5px 9px; background:#333; color:#eee;
+                   border:1px solid #555; border-radius:4px; cursor:pointer; font:inherit; }
+  button:hover:not(:disabled) { background:#444; }
+  button:disabled { opacity:.4; cursor:default; }
+  button.actif { background:#2d5a2d; border-color:#4a8a4a; }
+  .ctl { margin:5px 0; }
+  .ctl label { display:flex; justify-content:space-between; font-size:12px; }
+  .ctl output { font-variant-numeric:tabular-nums; color:#ffe600; }
+  .ctl input[type=range] { width:100%; }
+  table { width:100%; border-collapse:collapse; font-size:11.5px; font-variant-numeric:tabular-nums; }
+  th { text-align:left; color:#999; font-weight:600; padding:2px 3px; border-bottom:1px solid #383838; }
+  td { padding:2px 3px; border-bottom:1px solid #2a2a2a; }
+  tr.sel { background:#2a3a55; }
+  tr.incomplet td { color:#c9a227; }
+  .pastille { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px;
+              vertical-align:-1px; }
+  .bon { color:#7aff9a; } .moyen { color:#ffd166; } .mauvais { color:#ff7a7a; }
+  .info { margin-top:10px; padding-top:8px; border-top:1px solid #333; color:#bbb; white-space:pre-line;
+          font-variant-numeric:tabular-nums; }
+  .info b { color:#eee; }
+  .rangee { display:flex; flex-wrap:wrap; gap:3px 12px; margin:5px 0; font-size:12px; }
+  .rangee label { white-space:nowrap; }
+  .mini { font-size:11px; color:#888; }
+</style>
+
+
+<!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">52JMHFCM54FC-1459352069-1816879</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">46e62cee-e30a-4e6e-9df3-087b9b7287fb</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://unite69.sharepoint.com/sites/Documents/_layouts/15/DocIdRedir.aspx?ID=52JMHFCM54FC-1459352069-1816879, 52JMHFCM54FC-1459352069-1816879</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+<body>
+<div id="panneaux">
+  <div class="vue" id="vuePhoto">
+    <canvas id="cPhoto"></canvas>
+    <div class="etiquette">Photo &mdash; __FICHIER__</div>
+    <div class="aide">molette = zoom &middot; glisser = d&eacute;placer &middot; clic = poser ou saisir un point</div>
+  </div>
+  <div class="vue" id="vueOrtho" style="border-bottom:none">
+    <canvas id="cOrtho"></canvas>
+    <div class="etiquette">Orthophoto IGN &mdash; le m&ecirc;me point sur la carte</div>
+    <div class="aide">le contour du projet est trac&eacute; en bleu &middot; la cam&eacute;ra en rouge</div>
+  </div>
+</div>
+
+<div id="panneau">
+  <h1>__TITRE__</h1>
+  <p class="sub">__SOUS_TITRE__</p>
+
+  <h2>Points d'appui</h2>
+  <div>
+    <button id="bAjout">+ Nouveau point</button>
+    <button id="bSuppr" disabled>Supprimer</button>
+    <button id="bVider">Tout effacer</button>
+  </div>
+  <table id="tPoints"><thead><tr>
+    <th>#</th><th>photo</th><th>carte</th><th>h&nbsp;(m)</th><th>&eacute;cart</th>
+  </tr></thead><tbody></tbody></table>
+  <p class="mini" id="aidePoints"></p>
+
+  <h2>Calage</h2>
+  <div class="rangee">
+    <label><input type="checkbox" id="libreFocale"> ajuster aussi la focale</label>
+  </div>
+  <div>
+    <button id="bResoudre" disabled>R&eacute;soudre</button>
+    <button id="bDepart">Revenir au d&eacute;part</button>
+  </div>
+  <div class="info" id="resultat"></div>
+
+  <h2>R&eacute;glage manuel</h2>
+  <div class="ctl"><label>Azimut (&deg;) <output id="o_azimut"></output></label>
+    <input type="range" id="azimut" min="0" max="360" step="0.1"></div>
+  <div class="ctl"><label>Tangage (&deg;) <output id="o_tangage"></output></label>
+    <input type="range" id="tangage" min="-25" max="25" step="0.1"></div>
+  <div class="ctl"><label>Roulis (&deg;) <output id="o_roulis"></output></label>
+    <input type="range" id="roulis" min="-10" max="10" step="0.1"></div>
+  <div class="ctl"><label>Focale (px) <output id="o_f_px"></output></label>
+    <input type="range" id="f_px" min="1200" max="5000" step="1"></div>
+  <div class="ctl"><label>Hauteur de l'&oelig;il (m) <output id="o_hauteur"></output></label>
+    <input type="range" id="hauteur" min="1" max="3" step="0.01"></div>
+  <div class="ctl"><label>Est (m) <output id="o_est"></output></label>
+    <input type="range" id="est" min="-40" max="40" step="0.1"></div>
+  <div class="ctl"><label>Nord (m) <output id="o_nord"></output></label>
+    <input type="range" id="nord" min="-40" max="40" step="0.1"></div>
+
+  <h2>Masquage &mdash; ce qui passe devant</h2>
+  <p class="mini">Les haies, arbres et buissons situ&eacute;s devant le projet doivent le cacher.
+  Peignez-les sur la photo : le rendu est effac&eacute; dessous.</p>
+  <div>
+    <button id="mPinceau">Pinceau</button>
+    <button id="mGomme">Gomme</button>
+    <button id="mLigne">Sous un trait</button>
+    <button id="mVider">Tout effacer</button>
+  </div>
+  <div class="ctl"><label>Rayon du pinceau (px photo) <output id="o_rayon"></output></label>
+    <input type="range" id="rayon" min="10" max="400" step="5" value="90"></div>
+  <div class="ctl"><label>Adoucissement du bord (%) <output id="o_flou"></output></label>
+    <input type="range" id="flou" min="0" max="100" step="1" value="45"></div>
+  <div class="ctl"><label>Distance de cette v&eacute;g&eacute;tation (m) <output id="o_distMasque"></output></label>
+    <input type="range" id="distMasque" min="5" max="600" step="5" value="100"></div>
+  <p class="mini">Seul ce qui est plus loin que cette distance est masqu&eacute;. Le reste passe devant.</p>
+  <div class="rangee">
+    <label><input type="checkbox" id="voirMasque"> Voir le masque en rouge</label>
+  </div>
+  <p class="mini" id="aideMasque"></p>
+
+  <h2>Rendu</h2>
+  <div class="ctl"><label>Opacit&eacute; (%) <output id="o_opacite"></output></label>
+    <input type="range" id="opacite" min="0" max="100" step="1" value="100"></div>
+  <div class="ctl"><label>Brume &agrave; 1 km (%) <output id="o_brume"></output></label>
+    <input type="range" id="brume" min="0" max="80" step="1" value="22"></div>
+  <div class="rangee">
+    <label><input type="checkbox" class="couche" id="c_tables" checked> Tables</label>
+    <label><input type="checkbox" class="couche" id="c_structure" checked> Structure</label>
+    <label><input type="checkbox" class="couche" id="c_cloture" checked> Cl&ocirc;ture</label>
+    <label><input type="checkbox" class="couche" id="c_pistes" checked> Pistes</label>
+    <label><input type="checkbox" class="couche" id="c_zones" checked> Zones</label>
+    <label><input type="checkbox" class="couche" id="c_horizon"> Horizon</label>
+    <label><input type="checkbox" class="couche" id="c_points" checked> Points d'appui</label>
+  </div>
+  <div>
+    <button id="bExport">Exporter PNG</button>
+    <button id="bCalage">Copier le calage</button>
+    <button id="bRecadrer">Recadrer les vues</button>
+  </div>
+  <div class="info" id="etat"></div>
+</div>
+
+<script id="donnees" type="application/json">__DONNEES__</script>
+<script>
+'use strict';
+const D = JSON.parse(document.getElementById('donnees').textContent);
+const D2R = Math.PI/180;
+const NOMS = ['est','nord','hauteur','azimut','tangage','roulis','f_px'];
+
+/* ---------- modele de terrain ---------- */
+const MNT = {
+  ...D.mnt,
+  altitude(x, y) {
+    const fx = (x - this.x0)/this.pas, fy = (y - this.y0)/this.pas;
+    let i = Math.min(Math.max(Math.floor(fx), 0), this.ni-2);
+    let j = Math.min(Math.max(Math.floor(fy), 0), this.nj-2);
+    const tx = Math.min(Math.max(fx-i, 0), 1), ty = Math.min(Math.max(fy-j, 0), 1);
+    const z = (jj,ii) => this.z[jj*this.ni+ii];
+    return z(j,i)*(1-tx)*(1-ty) + z(j,i+1)*tx*(1-ty) + z(j+1,i)*(1-tx)*ty + z(j+1,i+1)*tx*ty;
+  }
+};
+
+/* ---------- camera ----------
+   Repere monde local : E, N, Up relatifs au sol sous la camera.
+   Repere camera : X droite, Y haut, Z avant. Identique a camera.py (verifie). */
+function makeCam(p) {
+  const a = p.azimut*D2R, t = p.tangage*D2R, r = p.roulis*D2R;
+  const sa=Math.sin(a), ca=Math.cos(a), st=Math.sin(t), ct=Math.cos(t), sr=Math.sin(r), cr=Math.cos(r);
+  const cx = D.photo.largeur/2, cy = D.photo.hauteur/2;
+  const zsol = MNT.altitude(p.est, p.nord);
+  return {
+    f: p.f_px, cx, cy, zsol, h: p.hauteur,
+    versCam(X, Y, Z) {
+      const dE = X - p.est, dN = Y - p.nord, dU = Z - zsol - p.hauteur;
+      const x1 = dE*ca - dN*sa, z1 = dE*sa + dN*ca, y1 = dU;
+      const y2 = y1*ct - z1*st, z2 = y1*st + z1*ct;
+      return [x1*cr - y2*sr, x1*sr + y2*cr, z2];
+    },
+    proj(X, Y, Z) {
+      const c = this.versCam(X, Y, Z);
+      if (c[2] <= 0.5) return null;
+      return [cx + this.f*c[0]/c[2], cy - this.f*c[1]/c[2]];
+    }
+  };
+}
+
+/* ---------- solveur (Levenberg-Marquardt, jacobien numerique) ---------- */
+function residus(p, pts) {
+  const cam = makeCam(p), r = [];
+  for (const q of pts) {
+    const s = cam.proj(q.X, q.Y, q.Z);
+    if (!s) { r.push(1e4, 1e4); } else { r.push(s[0]-q.u, s[1]-q.v); }
+  }
+  return r;
+}
+function somme(r) { let s = 0; for (const v of r) s += v*v; return s; }
+
+function resoudre(pts, depart, libres) {
+  const PAS = {est:0.05, nord:0.05, hauteur:0.01, azimut:0.01, tangage:0.01, roulis:0.01, f_px:1.0};
+  let p = Object.assign({}, depart);
+  let lambda = 1e-3;
+  let S = somme(residus(p, pts));
+  const n = libres.length;
+  for (let iter = 0; iter < 120; iter++) {
+    const r0 = residus(p, pts), m = r0.length;
+    const J = [];
+    for (const k of libres) {
+      const q = Object.assign({}, p); q[k] += PAS[k];
+      const r1 = residus(q, pts), col = new Array(m);
+      for (let i = 0; i < m; i++) col[i] = (r1[i]-r0[i])/PAS[k];
+      J.push(col);
+    }
+    const A = [], b = [];
+    for (let a = 0; a < n; a++) {
+      b.push(-J[a].reduce((s,v,i) => s + v*r0[i], 0));
+      const ligne = [];
+      for (let c = 0; c < n; c++) ligne.push(J[a].reduce((s,v,i) => s + v*J[c][i], 0));
+      A.push(ligne);
+    }
+    let applique = false;
+    for (let essai = 0; essai < 12 && !applique; essai++) {
+      const M = A.map((l,i) => l.map((v,j) => i===j ? v*(1+lambda) : v));
+      const dx = gauss(M, b.slice());
+      if (!dx) { lambda *= 10; continue; }
+      const q = Object.assign({}, p);
+      libres.forEach((k,i) => q[k] += dx[i]);
+      if (q.hauteur < 0.3) q.hauteur = 0.3;
+      if (q.f_px < 200) q.f_px = 200;
+      const S2 = somme(residus(q, pts));
+      if (S2 < S) { p = q; S = S2; lambda = Math.max(lambda/10, 1e-9); applique = true; }
+      else lambda *= 10;
+    }
+    if (!applique) break;
+  }
+  p.azimut = ((p.azimut % 360) + 360) % 360;
+  return p;
+}
+function gauss(A, b) {
+  const n = b.length;
+  for (let i = 0; i < n; i++) {
+    let piv = i;
+    for (let k = i+1; k < n; k++) if (Math.abs(A[k][i]) > Math.abs(A[piv][i])) piv = k;
+    if (Math.abs(A[piv][i]) < 1e-12) return null;
+    [A[i], A[piv]] = [A[piv], A[i]]; [b[i], b[piv]] = [b[piv], b[i]];
+    for (let k = i+1; k < n; k++) {
+      const f = A[k][i]/A[i][i];
+      for (let j = i; j < n; j++) A[k][j] -= f*A[i][j];
+      b[k] -= f*b[i];
+    }
+  }
+  const x = new Array(n).fill(0);
+  for (let i = n-1; i >= 0; i--) {
+    let s = b[i];
+    for (let j = i+1; j < n; j++) s -= A[i][j]*x[j];
+    x[i] = s/A[i][i];
+  }
+  return x;
+}
+
+/* ---------- etat ---------- */
+const P = Object.assign({}, D.depart);
+const DEPART = Object.assign({}, D.depart);
+let points = [];           // {u,v,X,Y,hauteur} ; u/v ou X/Y peuvent manquer
+let sel = -1;
+let attente = null;        // 'photo' | 'carte' quand on complete un point
+
+/* ---------- vues (zoom / deplacement) ---------- */
+function creerVue(idDiv, idCanvas, image, dessiner, surClic) {
+  const div = document.getElementById(idDiv), cv = document.getElementById(idCanvas);
+  const ctx = cv.getContext('2d');
+  const V = { k:1, tx:0, ty:0, img:image, ctx, cv, div, dessiner, manuel:false };
+  V.versEcran = (x,y) => [x*V.k + V.tx, y*V.k + V.ty];
+  V.versImage = (px,py) => [(px - V.tx)/V.k, (py - V.ty)/V.k];
+  V.ajuster = () => {
+    if (cv.width < 10 || cv.height < 10) return;      // mise en page pas encore faite
+    const k = Math.min(cv.width/image.width, cv.height/image.height);
+    V.k = k; V.tx = (cv.width - image.width*k)/2; V.ty = (cv.height - image.height*k)/2;
+  };
+  V.redim = () => {
+    const r = div.getBoundingClientRect();
+    const w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
+    if (w === cv.width && h === cv.height) return;
+    cv.width = w; cv.height = h;
+    if (!V.manuel) V.ajuster();                       // tant que l'utilisateur n'a pas zoome
+    V.dessiner(V);
+  };
+  let drag = null, bouge = 0, pinceau = false;
+  const pos = e => { const r = cv.getBoundingClientRect(); return V.versImage(e.clientX-r.left, e.clientY-r.top); };
+  cv.addEventListener('mousedown', e => {
+    if (V.outilActif && V.outilActif()) {          // mode masquage : on peint, on ne deplace pas
+      pinceau = true; V.peindre(...pos(e), e.shiftKey); V.dessiner(V); return;
+    }
+    drag = [e.clientX, e.clientY, V.tx, V.ty]; bouge = 0;
+  });
+  window.addEventListener('mousemove', e => {
+    if (pinceau) { V.peindre(...pos(e), e.shiftKey); V.dessiner(V); return; }
+    if (!drag) return;
+    bouge += Math.abs(e.clientX-drag[0]) + Math.abs(e.clientY-drag[1]);
+    if (bouge > 4) V.manuel = true;
+    V.tx = drag[2] + (e.clientX-drag[0]); V.ty = drag[3] + (e.clientY-drag[1]);
+    V.dessiner(V);
+  });
+  window.addEventListener('mouseup', e => {
+    if (pinceau) { pinceau = false; drag = null; return; }
+    if (drag && bouge < 4 && e.target === cv) {
+      const [x,y] = pos(e);
+      if (x >= 0 && y >= 0 && x < image.width && y < image.height) surClic(x, y);
+    }
+    drag = null;
+  });
+  cv.addEventListener('wheel', e => {
+    e.preventDefault();
+    const r = cv.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+    const [ix, iy] = V.versImage(px, py);
+    const k2 = Math.min(40, Math.max(0.05, V.k * (e.deltaY < 0 ? 1.18 : 1/1.18)));
+    V.k = k2; V.tx = px - ix*k2; V.ty = py - iy*k2;
+    V.manuel = true;
+    V.dessiner(V);
+  }, {passive:false});
+  return V;
+}
+
+/* ---------- conversions orthophoto <-> Lambert 93 ---------- */
+const O = D.ortho;
+const orthoVersL93 = (u,v) => [O.xmin + u/O.largeur*(O.xmax-O.xmin),
+                               O.ymax - v/O.hauteur*(O.ymax-O.ymin)];
+const l93VersOrtho = (X,Y) => [(X-O.xmin)/(O.xmax-O.xmin)*O.largeur,
+                               (O.ymax-Y)/(O.ymax-O.ymin)*O.hauteur];
+
+/* ---------- dessin ---------- */
+const COULEURS = ['#ff4d4d','#4dd2ff','#ffd24d','#7aff7a','#ff7aff','#ffa04d','#9d7aff','#4dffd2',
+                  '#ff4d94','#b3ff4d','#4d7aff','#ffe84d'];
+const couleur = i => COULEURS[i % COULEURS.length];
+
+function polyPhoto(g, cam, pts, fermer) {
+  let ouvert = false, n = 0;
+  g.beginPath();
+  for (const p of pts) {
+    const s = cam.proj(p[0], p[1], p[2]);
+    if (!s) { ouvert = false; continue; }
+    if (!ouvert) { g.moveTo(s[0], s[1]); ouvert = true; } else g.lineTo(s[0], s[1]);
+    n++;
+  }
+  if (fermer && n === pts.length) g.closePath();
+  return n === pts.length;
+}
+
+/* ---------- couleurs echantillonnees sur la photo ----------
+   Le ciel de la photo donne la lumiere : un module de verre est presque noir
+   vu de face et devient un miroir du ciel en incidence rasante. Prendre les
+   vraies couleurs de l'image evite un rendu qui jure avec la photo. */
+const CIEL = {haut: [150,175,205], bas: [190,205,220], sol: [120,120,105], pret: false, ligne: null};
+function echantillonnerCiel(img) {
+  try {
+    const oc = document.createElement('canvas');
+    oc.width = 96; oc.height = Math.max(8, Math.round(96*img.height/img.width));
+    const c = oc.getContext('2d');
+    c.drawImage(img, 0, 0, oc.width, oc.height);
+    const d = c.getImageData(0, 0, oc.width, oc.height).data;
+    const lignes = [];
+    for (let y = 0; y < oc.height; y++) {
+      let r=0, v=0, b=0;
+      for (let x = 0; x < oc.width; x++) {
+        const i = (y*oc.width + x)*4; r += d[i]; v += d[i+1]; b += d[i+2];
+      }
+      const n = oc.width;
+      lignes.push({y, c: [r/n, v/n, b/n], lum: (r+v+b)/(3*n), bleu: (b-r)/n});
+    }
+    // le ciel : clair ET bleuissant. On garde la plage la plus basse encore
+    // reconnue comme ciel : c'est elle qui donne la couleur de la brume.
+    const estCiel = l => l.lum > 95 && l.bleu > 4;
+    const cieux = lignes.filter(estCiel);
+    const moy = tab => tab.length
+      ? tab.reduce((a,l) => [a[0]+l.c[0]/tab.length, a[1]+l.c[1]/tab.length, a[2]+l.c[2]/tab.length], [0,0,0])
+      : null;
+    if (cieux.length > 4) {
+      const bas = cieux.slice(-Math.max(2, Math.round(cieux.length*0.18)));
+      CIEL.haut = moy(cieux.slice(0, Math.max(2, Math.round(cieux.length*0.25)))) || CIEL.haut;
+      CIEL.bas = moy(bas) || CIEL.bas;
+      CIEL.ligne = bas[bas.length-1].y / oc.height;   // position relative du bas du ciel
+      CIEL.pret = true;
+    }
+    CIEL.sol = moy(lignes.slice(Math.round(oc.height*0.75))) || CIEL.sol;
+  } catch (e) { /* photo d'une autre origine : on garde les valeurs par defaut */ }
+}
+const melange = (a, b, t) => [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
+const rgb = c => `rgb(${Math.round(Math.min(255,Math.max(0,c[0])))},${Math.round(Math.min(255,Math.max(0,c[1])))},${Math.round(Math.min(255,Math.max(0,c[2])))})`;
+
+/* direction du soleil dans le repere monde (E, N, Up) */
+function directionSoleil() {
+  if (!D.soleil || D.soleil.elevation <= 0) return null;
+  const a = D.soleil.azimut*D2R, e = D.soleil.elevation*D2R;
+  return [Math.sin(a)*Math.cos(e), Math.cos(a)*Math.cos(e), Math.sin(e)];
+}
+
+/* pre-calcul des normales et centroides des tables */
+const TABLES = D.geom.tables.map(q => {
+  const cen = [0,1,2].map(k => (q[0][k]+q[1][k]+q[2][k]+q[3][k])/4);
+  const u = [q[3][0]-q[0][0], q[3][1]-q[0][1], q[3][2]-q[0][2]];
+  const w = [q[1][0]-q[0][0], q[1][1]-q[0][1], q[1][2]-q[0][2]];
+  let n = [u[1]*w[2]-u[2]*w[1], u[2]*w[0]-u[0]*w[2], u[0]*w[1]-u[1]*w[0]];
+  if (n[2] < 0) n = n.map(v => -v);
+  const L = Math.hypot(n[0],n[1],n[2]);
+  return {q, cen, n: n.map(v => v/L), largeur: Math.hypot(w[0],w[1])};
+});
+
+function dessinerProjet(g, cam, ep, dmin, dmax) {
+  dmin = dmin || 0; dmax = dmax || 1e9;
+  const dedans = d => d >= dmin && d < dmax;
+  const al = parseFloat(document.getElementById('opacite').value)/100;
+  const brume = parseFloat(document.getElementById('brume').value)/100;
+  const coche = id => document.getElementById('c_'+id).checked;
+  const soleil = directionSoleil();
+  // le curseur donne directement l'attenuation a 1 km : lecture intuitive
+  const D_BRUME = brume > 0.001 ? -1000/Math.log(1-Math.min(0.95, brume)) : 1e9;
+  const facteurBrume = d => 1 - Math.exp(-d/D_BRUME);
+
+  g.save();
+  g.globalAlpha = al;
+
+  const dcen = pts => {
+    let x=0, y=0;
+    for (const p of pts) { x += p[0]/pts.length; y += p[1]/pts.length; }
+    return Math.hypot(x-P.est, y-P.nord);
+  };
+  if (coche('zones')) for (const z of D.geom.zones) {
+    const d = dcen(z);
+    if (!dedans(d) || !polyPhoto(g, cam, z, true)) continue;
+    g.fillStyle = rgb(melange([158,158,152], CIEL.bas, facteurBrume(d)));
+    g.fill(); g.strokeStyle='rgba(70,70,70,.7)'; g.lineWidth=ep; g.stroke();
+  }
+  if (coche('pistes')) for (const p of D.geom.pistes) {
+    const d = dcen(p);
+    if (!dedans(d) || !polyPhoto(g, cam, p, true)) continue;
+    g.fillStyle = rgb(melange([176,160,130], CIEL.bas, facteurBrume(d)));
+    g.fill(); g.strokeStyle='rgba(110,95,65,.7)'; g.lineWidth=ep; g.stroke();
+  }
+
+  // tables, du plus loin au plus pres
+  const items = TABLES.map(t => ({
+    t, d: Math.hypot(t.cen[0]-P.est, t.cen[1]-P.nord, t.cen[2]-cam.zsol-P.hauteur)
+  })).filter(it => dedans(it.d)).sort((a,b) => b.d - a.d);
+
+  for (const it of items) {
+    const t = it.t, q = t.q, d = it.d;
+    const vers = [(P.est-t.cen[0])/d, (P.nord-t.cen[1])/d, (cam.zsol+P.hauteur-t.cen[2])/d];
+    const cosVue = t.n[0]*vers[0] + t.n[1]*vers[1] + t.n[2]*vers[2];
+    const face = cosVue > 0;
+    const brumeT = facteurBrume(d);
+
+    // pieds : seulement si l'ecartement projete depasse quelques pixels
+    if (coche('structure') && cam.f*4.0/d > 26) {
+      g.strokeStyle = `rgba(58,58,62,${0.75*(1-brumeT)})`;
+      g.lineWidth = Math.max(ep, ep*Math.min(3, cam.f*0.09/d));
+      g.beginPath();
+      for (let i = 0; i <= 3; i++) {
+        const s = 0.06 + 0.88*i/3;
+        const bx=q[3][0]+(q[2][0]-q[3][0])*s, by=q[3][1]+(q[2][1]-q[3][1])*s, bz=q[3][2]+(q[2][2]-q[3][2])*s;
+        const a=cam.proj(bx,by,bz), b=cam.proj(bx,by,MNT.altitude(bx,by));
+        if (a&&b) { g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); }
+      }
+      g.stroke();
+    }
+
+    if (!coche('tables') || !polyPhoto(g, cam, q, true)) continue;
+
+    let coul;
+    if (face) {
+      // verre : sombre de face, miroir du ciel en incidence rasante (Fresnel)
+      const c = Math.max(0.02, Math.abs(cosVue));
+      const R = 0.04 + 0.96*Math.pow(1-c, 5);
+      const refl = melange(CIEL.bas, CIEL.haut, 0.55);
+      let base = [22, 28, 44];
+      if (soleil) {                       // un peu de diffus sur le cadre et le verre
+        const dif = Math.max(0, t.n[0]*soleil[0] + t.n[1]*soleil[1] + t.n[2]*soleil[2]);
+        base = melange(base, [64, 74, 96], 0.55*dif);
+      }
+      coul = melange(base, refl, Math.min(0.92, R));
+    } else {
+      // face arriere : structure et dessous des modules, mat
+      let base = [104, 102, 96];
+      if (soleil) {
+        const dif = Math.max(0, -(t.n[0]*soleil[0] + t.n[1]*soleil[1] + t.n[2]*soleil[2]));
+        base = melange([74, 72, 68], [138, 134, 124], dif);
+      }
+      coul = base;
+    }
+    g.fillStyle = rgb(melange(coul, CIEL.bas, brumeT));
+    g.fill();
+
+    // decoupe en modules, tant qu'elle reste lisible
+    const pasCol = cam.f*(t.largeur/26)/d;
+    if (pasCol > 3.5) {
+      g.strokeStyle = `rgba(255,255,255,${0.16*(1-brumeT)})`;
+      g.lineWidth = ep*0.7;
+      g.beginPath();
+      for (let i = 1; i < 26; i++) {
+        const s = i/26;
+        const a=cam.proj(q[3][0]+(q[2][0]-q[3][0])*s, q[3][1]+(q[2][1]-q[3][1])*s, q[3][2]+(q[2][2]-q[3][2])*s);
+        const b=cam.proj(q[0][0]+(q[1][0]-q[0][0])*s, q[0][1]+(q[1][1]-q[0][1])*s, q[0][2]+(q[1][2]-q[0][2])*s);
+        if (a&&b) { g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); }
+      }
+      const m=cam.proj((q[0][0]+q[3][0])/2,(q[0][1]+q[3][1])/2,(q[0][2]+q[3][2])/2);
+      const n2=cam.proj((q[1][0]+q[2][0])/2,(q[1][1]+q[2][1])/2,(q[1][2]+q[2][2])/2);
+      if (m&&n2) { g.moveTo(m[0],m[1]); g.lineTo(n2[0],n2[1]); }
+      g.stroke();
+    }
+
+    // aretes : bas sombre, haut clair (le bord superieur accroche la lumiere)
+    const A=cam.proj(q[0][0],q[0][1],q[0][2]), B=cam.proj(q[1][0],q[1][1],q[1][2]);
+    const C=cam.proj(q[2][0],q[2][1],q[2][2]), E=cam.proj(q[3][0],q[3][1],q[3][2]);
+    if (A&&B&&C&&E) {
+      g.strokeStyle = `rgba(12,16,28,${0.75*(1-brumeT)})`; g.lineWidth=ep*0.9;
+      g.beginPath(); g.moveTo(B[0],B[1]); g.lineTo(C[0],C[1]); g.lineTo(E[0],E[1]); g.stroke();
+      g.strokeStyle = rgb(melange(melange(CIEL.haut,[255,255,255],0.25), CIEL.bas, brumeT));
+      g.lineWidth = ep*Math.min(2.2, Math.max(0.9, cam.f*0.02/d));
+      g.beginPath(); g.moveTo(A[0],A[1]); g.lineTo(B[0],B[1]); g.stroke();
+    }
+  }
+
+  // la cloture court sur plusieurs centaines de metres : chaque segment porte
+  // sa propre distance, sinon un masque de vegetation la ferait disparaitre entiere
+  if (coche('cloture')) for (const c of D.geom.cloture) {
+    for (let i = 0; i < c.length-1; i++) {
+      const A = c[i], B = c[i+1];
+      const dseg = Math.hypot((A[0]+B[0])/2-P.est, (A[1]+B[1])/2-P.nord);
+      if (!dedans(dseg)) continue;
+      const a = 0.55*(1-facteurBrume(dseg));
+      g.strokeStyle = `rgba(105,108,100,${a})`; g.lineWidth = ep*0.8;
+      for (const dz of [D.cloture_h, D.cloture_h*0.5, 0.05]) {
+        g.beginPath();
+        const s0 = cam.proj(A[0],A[1],A[2]+dz), s1 = cam.proj(B[0],B[1],B[2]+dz);
+        if (s0 && s1) { g.moveTo(s0[0],s0[1]); g.lineTo(s1[0],s1[1]); g.stroke(); }
+      }
+      if (cam.f*2.5/dseg < 12) continue;          // poteaux illisibles au loin
+      g.strokeStyle = `rgba(78,80,74,${a*1.3})`; g.lineWidth = ep;
+      g.beginPath();
+      const L = Math.hypot(B[0]-A[0], B[1]-A[1]);
+      for (let s = 0; s < L; s += 2.5) {
+        const t2 = s/L, x = A[0]+(B[0]-A[0])*t2, y = A[1]+(B[1]-A[1])*t2, z = A[2]+(B[2]-A[2])*t2;
+        const a1 = cam.proj(x,y,z), b1 = cam.proj(x,y,z+D.cloture_h);
+        if (a1&&b1) { g.moveTo(a1[0],a1[1]); g.lineTo(b1[0],b1[1]); }
+      }
+      g.stroke();
+    }
+  }
+  g.restore();
+
+  if (coche('horizon')) {
+    g.save(); g.strokeStyle='#ffe600'; g.lineWidth=ep*1.3; g.setLineDash([10*ep,10*ep]);
+    g.beginPath();
+    let ouvert=false;
+    for (let d=-70; d<=70; d+=2) {
+      const a=(P.azimut+d)*D2R;
+      const s=cam.proj(P.est+1e6*Math.sin(a), P.nord+1e6*Math.cos(a), cam.zsol+P.hauteur);
+      if (!s) { ouvert=false; continue; }
+      if (!ouvert) { g.moveTo(s[0],s[1]); ouvert=true; } else g.lineTo(s[0],s[1]);
+    }
+    g.stroke(); g.restore();
+  }
+}
+
+/* ---------- masque : ce qui passe devant le projet ----------
+   Un calque peint par l'utilisateur, a la moitie de la resolution photo.
+   Le rendu du projet est efface la ou le masque est opaque. */
+const MASQUE = document.createElement('canvas');
+MASQUE.width = Math.round(D.photo.largeur/2);
+MASQUE.height = Math.round(D.photo.hauteur/2);
+const mctx = MASQUE.getContext('2d');
+let masqueVide = true;
+const OUTIL = { mode: null, rayon: 90, flou: 0.45, trait: [] };
+
+function peindre(x, y, effacer) {
+  const r = OUTIL.rayon/2;                       // photo -> demi-resolution
+  const cx = x/2, cy = y/2;
+  mctx.globalCompositeOperation = effacer ? 'destination-out' : 'source-over';
+  const f = Math.max(0.001, OUTIL.flou);
+  const grad = mctx.createRadialGradient(cx, cy, r*(1-f), cx, cy, r);
+  grad.addColorStop(0, 'rgba(0,0,0,1)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  mctx.fillStyle = grad;
+  mctx.beginPath(); mctx.arc(cx, cy, r, 0, 6.2832); mctx.fill();
+  mctx.globalCompositeOperation = 'source-over';
+  masqueVide = false;
+}
+function masquerSousTrait(pts) {
+  if (pts.length < 2) return;
+  mctx.globalCompositeOperation = 'source-over';
+  mctx.fillStyle = '#000';
+  mctx.beginPath();
+  mctx.moveTo(pts[0][0]/2, pts[0][1]/2);
+  for (const p of pts.slice(1)) mctx.lineTo(p[0]/2, p[1]/2);
+  mctx.lineTo(pts[pts.length-1][0]/2, MASQUE.height);
+  mctx.lineTo(pts[0][0]/2, MASQUE.height);
+  mctx.closePath(); mctx.fill();
+  masqueVide = false;
+}
+
+/* dessine le projet dans un calque, y applique le masque, puis compose */
+let CALQUE = document.createElement('canvas');
+function projetMasque(g, cam, ep, larg, haut, transf) {
+  if (masqueVide) { dessinerProjet(g, cam, ep); return; }
+  const dm = parseFloat(document.getElementById('distMasque').value);
+  if (CALQUE.width !== larg || CALQUE.height !== haut) { CALQUE.width = larg; CALQUE.height = haut; }
+  const c = CALQUE.getContext('2d');
+  c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,larg,haut);
+  c.setTransform(...transf);
+  dessinerProjet(c, cam, ep, dm, 1e9);          // ce qui est derriere la vegetation
+  c.setTransform(...transf);
+  c.globalCompositeOperation = 'destination-out';
+  c.drawImage(MASQUE, 0, 0, D.photo.largeur, D.photo.hauteur);
+  c.globalCompositeOperation = 'source-over';
+  const av = g.getTransform ? g.getTransform() : null;
+  g.setTransform(1,0,0,1,0,0);
+  g.drawImage(CALQUE, 0, 0);
+  if (av) g.setTransform(av); else g.setTransform(...transf);
+  dessinerProjet(g, cam, ep, 0, dm);            // ce qui est devant : jamais masque
+}
+
+function dessinerPhoto(V) {
+  const g = V.ctx;
+  g.setTransform(1,0,0,1,0,0);
+  g.fillStyle='#0a0a0a'; g.fillRect(0,0,V.cv.width,V.cv.height);
+  g.setTransform(V.k,0,0,V.k,V.tx,V.ty);
+  g.drawImage(V.img, 0, 0);
+  const ep = 1/V.k;
+  projetMasque(g, makeCam(P), ep, V.cv.width, V.cv.height, [V.k,0,0,V.k,V.tx,V.ty]);
+  g.setTransform(V.k,0,0,V.k,V.tx,V.ty);
+  if (document.getElementById('voirMasque').checked && !masqueVide) {
+    g.save(); g.globalAlpha = 0.45;
+    const t = document.createElement('canvas'); t.width = MASQUE.width; t.height = MASQUE.height;
+    const tc = t.getContext('2d');
+    tc.drawImage(MASQUE, 0, 0);
+    tc.globalCompositeOperation = 'source-in';
+    tc.fillStyle = '#ff2020'; tc.fillRect(0,0,t.width,t.height);
+    g.drawImage(t, 0, 0, D.photo.largeur, D.photo.hauteur);
+    g.restore();
+  }
+  if (OUTIL.mode === 'ligne' && OUTIL.trait.length) {
+    g.save(); g.strokeStyle='#ff2020'; g.lineWidth=2*ep; g.setLineDash([8*ep,6*ep]);
+    g.beginPath(); OUTIL.trait.forEach((p,i) => i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));
+    g.stroke(); g.restore();
+  }
+  if (document.getElementById('c_points').checked) {
+    points.forEach((p,i) => {
+      if (p.u == null) return;
+      g.strokeStyle = couleur(i); g.lineWidth = 2*ep;
+      g.beginPath(); g.arc(p.u, p.v, 9*ep, 0, 6.2832); g.stroke();
+      g.beginPath(); g.moveTo(p.u-14*ep,p.v); g.lineTo(p.u+14*ep,p.v);
+      g.moveTo(p.u,p.v-14*ep); g.lineTo(p.u,p.v+14*ep); g.stroke();
+      g.fillStyle = couleur(i); g.font = `${13*ep}px system-ui`;
+      g.fillText(String(i+1), p.u+12*ep, p.v-10*ep);
+      if (p.X != null) {                       // trait vers la position reprojetee
+        const s = makeCam(P).proj(p.X, p.Y, MNT.altitude(p.X,p.Y)+(p.hauteur||0));
+        if (s) { g.setLineDash([4*ep,3*ep]); g.beginPath(); g.moveTo(p.u,p.v); g.lineTo(s[0],s[1]); g.stroke();
+                 g.setLineDash([]); g.beginPath(); g.arc(s[0],s[1],4*ep,0,6.2832); g.fill(); }
+      }
+    });
+  }
+  g.setTransform(1,0,0,1,0,0);
+}
+
+function dessinerOrtho(V) {
+  const g = V.ctx;
+  g.setTransform(1,0,0,1,0,0);
+  g.fillStyle='#0a0a0a'; g.fillRect(0,0,V.cv.width,V.cv.height);
+  g.setTransform(V.k,0,0,V.k,V.tx,V.ty);
+  g.drawImage(V.img, 0, 0);
+  const ep = 1/V.k;
+  // emprise du projet
+  g.strokeStyle='#4da6ff'; g.lineWidth=1.5*ep; g.fillStyle='rgba(77,166,255,.22)';
+  for (const q of D.geom.tables) {
+    g.beginPath();
+    q.forEach((p,i) => { const s=l93VersOrtho(p[0],p[1]); i?g.lineTo(s[0],s[1]):g.moveTo(s[0],s[1]); });
+    g.closePath(); g.fill();
+  }
+  for (const c of D.geom.cloture) {
+    g.beginPath();
+    c.forEach((p,i) => { const s=l93VersOrtho(p[0],p[1]); i?g.lineTo(s[0],s[1]):g.moveTo(s[0],s[1]); });
+    g.strokeStyle='#000'; g.lineWidth=2.5*ep; g.stroke();
+  }
+  // camera et cone de vue
+  const c0 = l93VersOrtho(P.est, P.nord);
+  const hf = Math.atan(D.photo.largeur/(2*P.f_px));
+  g.strokeStyle='#ff3030'; g.lineWidth=1.5*ep; g.setLineDash([]);
+  for (const s of [-hf, 0, hf]) {
+    const a = P.azimut*D2R + s;
+    const q = l93VersOrtho(P.est + 500*Math.sin(a), P.nord + 500*Math.cos(a));
+    g.beginPath(); g.moveTo(c0[0],c0[1]); g.lineTo(q[0],q[1]); g.stroke();
+  }
+  g.fillStyle='#ff3030'; g.beginPath(); g.arc(c0[0],c0[1],5*ep,0,6.2832); g.fill();
+  if (document.getElementById('c_points').checked) {
+    points.forEach((p,i) => {
+      if (p.X == null) return;
+      const s = l93VersOrtho(p.X, p.Y);
+      g.strokeStyle = couleur(i); g.lineWidth = 2*ep;
+      g.beginPath(); g.arc(s[0],s[1],7*ep,0,6.2832); g.stroke();
+      g.beginPath(); g.moveTo(s[0]-11*ep,s[1]); g.lineTo(s[0]+11*ep,s[1]);
+      g.moveTo(s[0],s[1]-11*ep); g.lineTo(s[0],s[1]+11*ep); g.stroke();
+      g.fillStyle = couleur(i); g.font = `${12*ep}px system-ui`;
+      g.fillText(String(i+1), s[0]+10*ep, s[1]-8*ep);
+    });
+  }
+  g.setTransform(1,0,0,1,0,0);
+}
+
+/* ---------- interface ---------- */
+const imgPhoto = new Image(), imgOrtho = new Image();
+let VP, VO;
+
+function ecartsCourants() {
+  const cam = makeCam(P);
+  return points.map(p => {
+    if (p.u == null || p.X == null) return null;
+    const s = cam.proj(p.X, p.Y, MNT.altitude(p.X,p.Y)+(p.hauteur||0));
+    return s ? Math.hypot(s[0]-p.u, s[1]-p.v) : null;
+  });
+}
+
+function majTable() {
+  const tb = document.querySelector('#tPoints tbody');
+  const ec = ecartsCourants();
+  tb.innerHTML = '';
+  points.forEach((p,i) => {
+    const tr = document.createElement('tr');
+    if (i === sel) tr.className = 'sel';
+    else if (p.u == null || p.X == null) tr.className = 'incomplet';
+    const e = ec[i];
+    const cl = e == null ? '' : (e < 5 ? 'bon' : e < 15 ? 'moyen' : 'mauvais');
+    tr.innerHTML = `<td><span class="pastille" style="background:${couleur(i)}"></span>${i+1}</td>`
+      + `<td>${p.u==null?'&mdash;':Math.round(p.u)+', '+Math.round(p.v)}</td>`
+      + `<td>${p.X==null?'&mdash;':Math.round(p.X)+', '+Math.round(p.Y)}</td>`
+      + `<td><input type="number" value="${p.hauteur||0}" step="0.5" style="width:46px;background:#2a2a2a;color:#ddd;border:1px solid #444;border-radius:3px" data-i="${i}"></td>`
+      + `<td class="${cl}">${e==null?'&mdash;':e.toFixed(1)}</td>`;
+    tr.addEventListener('click', ev => {
+      if (ev.target.tagName === 'INPUT') return;
+      sel = i; attente = null; majTout();
+    });
+    tb.appendChild(tr);
+  });
+  tb.querySelectorAll('input[type=number]').forEach(inp => {
+    inp.addEventListener('change', e => {
+      points[+e.target.dataset.i].hauteur = parseFloat(e.target.value) || 0;
+      majTout();
+    });
+  });
+  const complets = points.filter(p => p.u != null && p.X != null).length;
+  document.getElementById('bResoudre').disabled = complets < 3;
+  document.getElementById('bSuppr').disabled = sel < 0;
+  const l = document.getElementById('libreFocale');
+  const varies = points.filter(p => p.u!=null && p.X!=null && (p.hauteur||0) > 0.5).length;
+  l.disabled = varies < 2;
+  if (l.disabled) l.checked = false;
+  let aide;
+  if (attente === 'carte') aide = `Point ${sel+1} : cliquez maintenant le même endroit sur l'orthophoto.`;
+  else if (attente === 'photo') aide = `Point ${sel+1} : cliquez maintenant le même endroit sur la photo.`;
+  else if (complets < 3) aide = `${complets} point(s) complet(s). Il en faut au moins 3, idéalement 6 bien répartis.`;
+  else aide = `${complets} points complets. La colonne h est la hauteur au-dessus du sol (0 = au sol).`;
+  if (!l.disabled) aide += " Focale ajustable : au moins deux points en hauteur.";
+  document.getElementById('aidePoints').textContent = aide;
+}
+
+function majCurseurs() {
+  for (const k of NOMS) {
+    const el = document.getElementById(k);
+    if (!el) continue;
+    if (k === 'est' || k === 'nord') el.value = (P[k] - DEPART[k]).toFixed(1);
+    else el.value = P[k];
+    majSortie(k);
+  }
+}
+function majSortie(k) {
+  const o = document.getElementById('o_'+k);
+  if (!o) return;
+  const dec = (k==='f_px') ? 0 : (k==='hauteur' ? 2 : 1);
+  if (k==='est'||k==='nord') o.textContent = (P[k]-DEPART[k]>=0?'+':'') + (P[k]-DEPART[k]).toFixed(1);
+  else o.textContent = P[k].toFixed(dec);
+}
+
+function majEtat() {
+  const ec = ecartsCourants().filter(v => v != null);
+  const rms = ec.length ? Math.sqrt(ec.reduce((s,v)=>s+v*v,0)/ec.length) : null;
+  const cam = makeCam(P);
+  const hfov = 2*Math.atan(D.photo.largeur/(2*P.f_px))/D2R;
+  document.getElementById('etat').innerHTML =
+    `<b>Position</b> L93 ${P.est.toFixed(1)}, ${P.nord.toFixed(1)} `
+    + `(${(P.est-DEPART.est>=0?'+':'')}${(P.est-DEPART.est).toFixed(1)}, `
+    + `${(P.nord-DEPART.nord>=0?'+':'')}${(P.nord-DEPART.nord).toFixed(1)} m du GPS)\n`
+    + `<b>Sol</b> ${cam.zsol.toFixed(2)} m NGF &middot; <b>&oelig;il</b> ${(cam.zsol+P.hauteur).toFixed(2)} m\n`
+    + `<b>Champ</b> ${hfov.toFixed(1)}&deg; &middot; focale ${P.f_px.toFixed(0)} px `
+    + `(${(P.f_px*36/D.photo.largeur).toFixed(1)} mm eq. 35)\n`
+    + (D.soleil ? `<b>Soleil</b> azimut ${D.soleil.azimut.toFixed(0)}&deg;, hauteur `
+        + `${D.soleil.elevation.toFixed(0)}&deg; (${D.soleil.instant})\n` : '')
+    + (rms == null ? '' : `<b>&Eacute;cart moyen</b> ${rms.toFixed(1)} px sur ${ec.length} points`);
+}
+
+function majTout() {
+  majTable(); majEtat();
+  if (VP) VP.dessiner(VP);
+  if (VO) VO.dessiner(VO);
+}
+
+function clicPhoto(x, y) {
+  if (OUTIL.mode === 'ligne') {          // on pose les sommets du trait de masquage
+    OUTIL.trait.push([x, y]); majTout(); return;
+  }
+  if (attente === 'photo' && sel >= 0) { points[sel].u = x; points[sel].v = y; attente = null; }
+  else {
+    const libre = points.findIndex(p => p.u == null);
+    if (libre >= 0) { points[libre].u = x; points[libre].v = y; sel = libre; attente = null; }
+    else { points.push({u:x, v:y, X:null, Y:null, hauteur:0}); sel = points.length-1; attente = 'carte'; }
+  }
+  majTout();
+}
+function clicOrtho(x, y) {
+  const [X, Y] = orthoVersL93(x, y);
+  if (attente === 'carte' && sel >= 0) { points[sel].X = X; points[sel].Y = Y; attente = null; }
+  else {
+    const libre = points.findIndex(p => p.X == null);
+    if (libre >= 0) { points[libre].X = X; points[libre].Y = Y; sel = libre; attente = null; }
+    else { points.push({u:null, v:null, X, Y, hauteur:0}); sel = points.length-1; attente = 'photo'; }
+  }
+  majTout();
+}
+
+document.getElementById('bAjout').addEventListener('click', () => {
+  points.push({u:null,v:null,X:null,Y:null,hauteur:0}); sel = points.length-1; attente = 'photo'; majTout();
+});
+document.getElementById('bSuppr').addEventListener('click', () => {
+  if (sel >= 0) { points.splice(sel,1); sel = -1; attente = null; majTout(); }
+});
+document.getElementById('bVider').addEventListener('click', () => {
+  points = []; sel = -1; attente = null; majTout();
+});
+document.getElementById('bDepart').addEventListener('click', () => {
+  Object.assign(P, DEPART); majCurseurs(); majTout();
+  document.getElementById('resultat').textContent = '';
+});
+document.getElementById('bResoudre').addEventListener('click', () => {
+  const pts = points.filter(p => p.u != null && p.X != null)
+    .map(p => ({u:p.u, v:p.v, X:p.X, Y:p.Y, Z: MNT.altitude(p.X,p.Y) + (p.hauteur||0)}));
+  const libres = ['est','nord','hauteur','azimut','tangage','roulis'];
+  if (document.getElementById('libreFocale').checked) libres.push('f_px');
+  if (2*pts.length < libres.length) {
+    document.getElementById('resultat').innerHTML =
+      `<span class="mauvais">${pts.length} points pour ${libres.length} inconnues : il en faut plus.</span>`;
+    return;
+  }
+  const t0 = performance.now();
+  const sol = resoudre(pts, P, libres);
+  Object.assign(P, sol);
+  majCurseurs(); majTout();
+  const ec = ecartsCourants().filter(v => v != null);
+  const rms = Math.sqrt(ec.reduce((s,v)=>s+v*v,0)/ec.length);
+  const ddl = 2*pts.length - libres.length;
+  const cl = rms < 5 ? 'bon' : rms < 15 ? 'moyen' : 'mauvais';
+  document.getElementById('resultat').innerHTML =
+    `<b>R&eacute;solu</b> en ${(performance.now()-t0).toFixed(0)} ms &middot; ${ddl} degr&eacute;s de libert&eacute;\n`
+    + `<b>&Eacute;cart moyen</b> <span class="${cl}">${rms.toFixed(1)} px</span> `
+    + `&middot; max ${Math.max(...ec).toFixed(1)} px\n`
+    + `azimut ${P.azimut.toFixed(1)}&deg; &middot; tangage ${P.tangage.toFixed(1)}&deg; `
+    + `&middot; roulis ${P.roulis.toFixed(1)}&deg;\n`
+    + `d&eacute;placement depuis le GPS : `
+    + `${Math.hypot(P.est-DEPART.est, P.nord-DEPART.nord).toFixed(1)} m`
+    + (ddl <= 0 ? `\n<span class="moyen">Aucune redondance : l'&eacute;cart nul ne prouve rien.</span>` : '');
+});
+document.getElementById('bCalage').addEventListener('click', () => {
+  const t = NOMS.map(k => `${k}=${P[k].toFixed(k==='f_px'?0:3)}`).join('  ');
+  navigator.clipboard && navigator.clipboard.writeText(t);
+  document.getElementById('resultat').textContent = 'Calage copié : ' + t;
+});
+for (const k of NOMS) {
+  const el = document.getElementById(k);
+  if (!el) continue;
+  el.addEventListener('input', () => {
+    P[k] = (k==='est'||k==='nord') ? DEPART[k] + parseFloat(el.value) : parseFloat(el.value);
+    majSortie(k); majTout();
+  });
+}
+for (const k of ['opacite', 'brume']) {
+  document.getElementById(k).addEventListener('input', e => {
+    document.getElementById('o_'+k).textContent = e.target.value; majTout();
+  });
+}
+document.querySelectorAll('.couche').forEach(el => el.addEventListener('change', majTout));
+document.getElementById('bExport').addEventListener('click', () => {
+  const oc = document.createElement('canvas');
+  oc.width = D.photo.largeur; oc.height = D.photo.hauteur;
+  const g = oc.getContext('2d');
+  g.drawImage(imgPhoto, 0, 0, oc.width, oc.height);
+  projetMasque(g, makeCam(P), 1, oc.width, oc.height, [1,0,0,1,0,0]);
+  oc.toBlob(b => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = `${D.nom_court}_az${P.azimut.toFixed(1)}_f${P.f_px.toFixed(0)}.png`;
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }, 'image/png');
+});
+
+document.getElementById('bRecadrer').addEventListener('click', () => recadrer());
+
+/* ---------- outils de masquage ---------- */
+function majMasque() {
+  for (const [id, mode] of [['mPinceau','pinceau'], ['mGomme','gomme'], ['mLigne','ligne']])
+    document.getElementById(id).classList.toggle('actif', OUTIL.mode === mode);
+  const aide = {
+    pinceau: "Glissez sur la photo pour peindre ce qui passe devant. Maj enfoncé = gomme.",
+    gomme: "Glissez pour retirer du masque.",
+    ligne: "Cliquez les sommets du haut de la haie, puis « Fermer le trait » : tout ce qui est dessous est masqué.",
+  }[OUTIL.mode] || "Aucun outil actif : la souris déplace la vue et pose les points d'appui.";
+  document.getElementById('aideMasque').textContent = aide;
+  document.getElementById('mLigne').textContent = (OUTIL.mode === 'ligne' && OUTIL.trait.length > 1)
+    ? 'Fermer le trait' : 'Sous un trait';
+}
+for (const [id, mode] of [['mPinceau','pinceau'], ['mGomme','gomme'], ['mLigne','ligne']]) {
+  document.getElementById(id).addEventListener('click', () => {
+    if (mode === 'ligne' && OUTIL.mode === 'ligne' && OUTIL.trait.length > 1) {
+      masquerSousTrait(OUTIL.trait); OUTIL.trait = []; OUTIL.mode = null;
+    } else {
+      OUTIL.mode = (OUTIL.mode === mode) ? null : mode;
+      if (mode !== 'ligne') OUTIL.trait = [];
+    }
+    majMasque(); majTout();
+  });
+}
+document.getElementById('mVider').addEventListener('click', () => {
+  mctx.clearRect(0,0,MASQUE.width,MASQUE.height); masqueVide = true;
+  OUTIL.trait = []; majTout();
+});
+for (const [id, cle, div] of [['rayon','rayon',1], ['flou','flou',100], ['distMasque','dist',1]]) {
+  const el = document.getElementById(id);
+  const upd = () => { OUTIL[cle] = parseFloat(el.value)/div;
+                      document.getElementById('o_'+id).textContent = el.value; };
+  el.addEventListener('input', () => { upd(); if (id === 'distMasque') majTout(); }); upd();
+}
+document.getElementById('voirMasque').addEventListener('change', majTout);
+
+let charges = 0;
+function pret() {
+  if (++charges < 2) return;
+  echantillonnerCiel(imgPhoto);
+  VP = creerVue('vuePhoto','cPhoto', imgPhoto, dessinerPhoto, clicPhoto);
+  VP.outilActif = () => OUTIL.mode === 'pinceau' || OUTIL.mode === 'gomme';
+  VP.peindre = (x, y, maj) => peindre(x, y, (OUTIL.mode === 'gomme') !== !!maj);
+  majMasque();
+  VO = creerVue('vueOrtho','cOrtho', imgOrtho, dessinerOrtho, clicOrtho);
+  new ResizeObserver(() => { VP.redim(); VO.redim(); }).observe(document.getElementById('panneaux'));
+  for (const k of ['opacite','brume'])
+    document.getElementById('o_'+k).textContent = document.getElementById(k).value;
+  requestAnimationFrame(() => {
+    VP.redim(); VO.redim();
+    majCurseurs(); majTout();
+  });
+}
+/* remet les deux vues au cadrage automatique */
+function recadrer() {
+  for (const V of [VP, VO]) { if (V) { V.manuel = false; V.ajuster(); V.dessiner(V); } }
+}
+imgPhoto.onload = pret; imgOrtho.onload = pret;
+imgPhoto.src = 'data:image/jpeg;base64,__PHOTO__';
+imgOrtho.src = 'data:image/jpeg;base64,__ORTHO__';
+</script>
+</body>
+</html>

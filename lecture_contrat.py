@@ -261,6 +261,23 @@ def _reconstruire_plat(gpkg, p, couches, verbose):
         verbose=verbose)
 
 
+def lire_plan(chemin, verbose=True):
+    """Lit un plan, qu'il soit un DXF ou un CONTRAT. Rend une `Scene`.
+
+    Les deux sources rendent la meme structure, et aucun appelant en aval n'a
+    besoin de savoir laquelle il a. Un contrat est un DOSSIER — `geometries.gpkg`
+    + `projet.json` —, un plan du bureau d'etudes un FICHIER : c'est le seul
+    test necessaire, et il ne peut pas se tromper.
+
+    Le but etant de se passer du bureau d'etudes, c'est le contrat qui devient
+    l'entree normale ; le DXF reste lu pour les projets deja engages.
+    """
+    p = Path(chemin)
+    if p.is_dir():
+        return lire(p, verbose=verbose)
+    return lecture_dxf.lire(p)
+
+
 def lire(dossier, verbose=True):
     """Lit un dossier de sortie de `generateur-dp` et renvoie une `Scene`."""
     dossier = Path(dossier)

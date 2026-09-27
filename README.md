@@ -13,8 +13,32 @@ préalable, produite par [`generateur-dp`](https://github.com/eliott-mo/uniteout
 
 | | |
 |---|---|
-| **une photo géolocalisée** | fournie directement, ou extraite d'un rapport photo-géoloc |
-| **un plan DXF** | complet, ou limité aux tables — et dans ce second cas, un plan PDF portant clôture, haies, pistes et ouvrages |
+| **un contrat** | `geometries.gpkg` + `projet.json` écrits par `generateur-dp` — l'entrée normale, le but étant de se passer du bureau d'études |
+| **ou un plan DXF** | complet, ou limité aux tables — et dans ce second cas, un plan PDF portant clôture, haies, pistes et ouvrages |
+| **les photos d'origine** | celles **sorties du téléphone**, pour leur EXIF |
+| **une carte `photos-geoloc`** | où le chef de projet a replacé les points et calibré les cônes |
+
+### Où tout cela se range
+
+```
+projets/{NOM}/                  les ENTRÉES, telles que reçues
+    contrat/PV-xxx/             geometries.gpkg + projet.json
+    *.jpg                       les photos sorties du téléphone
+    Photos géolocalisées.html   la carte photos-geoloc
+projets/{NOM}/montages/         tout ce que la chaîne produit
+```
+
+`dossiers.py` est le seul endroit qui le dit, et les outils s'y réfèrent : un fragment
+de nom suffit à désigner un projet (`Gannay`, `88`), et **un fragment ambigu est une
+erreur, pas un choix** — « Loire » désigne à la fois Gannay-sur-Loire et
+Saint-Aubin-sur-Loire, et un montage déposé au mauvais endroit ressemble à un montage.
+
+Le travail va donc **à côté de ses entrées** : il survit à la session, il s'archive d'un
+bloc, et un seul dossier porte le contrat, les photos, la page de calage, les rendus et
+les montages. `projets/` est exclu du dépôt — ce sont des données de client.
+
+La **livraison**, elle, est ailleurs : `livrer_dp6.py` dépose sous
+`../generateur-dp/projets/{NOM}/DP_6/`. `montages/` est l'atelier, pas l'étagère.
 
 Trois choses valent d'être demandées **avant** de commencer, parce qu'elles coûtent cher
 à rattraper :

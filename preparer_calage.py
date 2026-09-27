@@ -47,6 +47,7 @@ l'EXIF brut. On donne donc les deux : la photo d'origine pour l'optique, le
 rapport pour la pose de depart.
 
 Usage :
+    python preparer_calage.py --projet Gannay IMG_0001.jpg
     python preparer_calage.py contrat/ photo.jpg sortie.html
     python preparer_calage.py plan.dxf photo.jpg sortie.html --azimut 245
     python preparer_calage.py contrat/ photo.jpg sortie.html         --rapport "Photos geolocalisees.html" --rogner-bas 260
@@ -61,6 +62,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+import dossiers
 import lecture_contrat
 import preparer_vue
 import terrain
@@ -250,12 +252,41 @@ def preparer(plan, photo, sortie, azimut=None, tangage=0.0, roulis=0.0,
     return depart
 
 
+def depuis_projet(nom, photo, sortie=None, rapport=None):
+    """Resout plan, photo, sortie et rapport dans un dossier de projet.
+
+    C'est la forme qu'on tape quinze fois : `--projet Gannay photo.jpg`. Le
+    contrat, la carte et l'atelier s'y trouvent seuls, et la page ne PEUT PAS
+    atterrir dans le mauvais projet — `dossiers.projet` refuse un fragment
+    ambigu. Sans cela « Loire » designerait a la fois Gannay-sur-Loire et
+    Saint-Aubin-sur-Loire, et un montage depose au mauvais endroit ressemble
+    a un montage.
+    """
+    base = dossiers.projet(nom)
+    ph = Path(photo)
+    if not ph.exists():
+        candidats = [f for f in base.rglob(ph.name) if f.is_file()]
+        if len(candidats) != 1:
+            raise ValueError(
+                f"{ph.name} : {len(candidats)} fichier(s) de ce nom sous "
+                f"{base.name}")
+        ph = candidats[0]
+    if rapport is None:
+        cartes = [h for h in base.glob("*.htm*") if h.is_file()]
+        rapport = cartes[0] if len(cartes) == 1 else None
+    if sortie is None:
+        sortie = dossiers.montages(nom) / f"calage_{ph.stem}.html"
+    return dossiers.contrat(nom), ph, Path(sortie), rapport
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    p.add_argument("plan", help="DXF du bureau d'etudes, ou "
-                                "dossier de contrat generateur-dp")
-    p.add_argument("photo")
-    p.add_argument("sortie")
+    p.add_argument("--projet", help="nom (ou fragment) d'un dossier de "
+                                    "projets/ : contrat, carte et dossier de "
+                                    "sortie s'y trouvent seuls")
+    p.add_argument("args", nargs="*", metavar="...",
+                   help="avec --projet : la PHOTO seule (et au besoin la "
+                        "sortie). Sans : PLAN PHOTO SORTIE.")
     p.add_argument("--azimut", type=float,
                    help="azimut de depart ; a defaut, la meilleure visee")
     p.add_argument("--tangage", type=float, default=0.0)
@@ -268,8 +299,18 @@ def main():
                    help="carte photos-geoloc : sa position replacee et son "
                         "cap calibre priment sur l'EXIF")
     a = p.parse_args()
-    preparer(a.plan, a.photo, a.sortie, azimut=a.azimut, tangage=a.tangage,
-             roulis=a.roulis, hauteur_oeil=a.oeil, rapport=a.rapport,
+    if a.projet:
+        if not 1 <= len(a.args) <= 2:
+            p.error("avec --projet, donner la PHOTO (et au besoin la sortie)")
+        plan, photo, sortie, rapport = depuis_projet(
+            a.projet, a.args[0], a.args[1] if len(a.args) > 1 else None,
+            a.rapport)
+    elif len(a.args) == 3:
+        plan, photo, sortie, rapport = (*a.args, a.rapport)
+    else:
+        p.error("donner PLAN PHOTO SORTIE, ou --projet NOM PHOTO")
+    preparer(plan, photo, sortie, azimut=a.azimut, tangage=a.tangage,
+             roulis=a.roulis, hauteur_oeil=a.oeil, rapport=rapport,
              rogner_bas=a.rogner_bas, titre=a.titre)
     return 0
 

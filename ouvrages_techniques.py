@@ -270,13 +270,62 @@ def _pivots(scn):
     return out
 
 
+def _cordes(scn, tol=TOL_PIVOT):
+    """Segments de la couche « portail » dont les DEUX bouts sont sur la clôture.
+
+    ⚠️ QUAND LE PLAN DESSINE LE PORTAIL, IL FAUT LE LIRE PLUTOT QUE LE DEDUIRE.
+    Un DXF de bureau d'etudes ne trace souvent que les VANTAUX — d'ou
+    l'heuristique des pivots ci-dessous, ecrite pour Saint-Cyr. Mais un contrat
+    reconstitue depuis un plan PDF ecrit le portail en CINQ entites, mesurees
+    sur Gannay :
+
+        1 segment de 6,99 m, ses deux bouts a 0,11 et 0,13 m de la cloture
+        2 vantaux de 3,50 m, un bout sur la cloture, l'autre a 3,4 m
+        2 arcs de battement de 5,49 m, en dix-sept points
+
+    Le premier EST le portail : position, largeur et cap se lisent dessus.
+    L'heuristique des pivots, elle, cherche un segment de CLOTURE de la bonne
+    largeur — or l'enceinte de ce contrat n'a que quatre cotes de 170 a 190 m.
+    Faute de le trouver, elle retombait sur l'ecartement des pivots et donnait
+    **3,38 m pour un portail que le contrat declare a 7,00 m**, soit la moitie.
+    """
+    lignes = scn.lignes.get("cloture") or []
+    if not lignes:
+        return []
+    from shapely.geometry import LineString, Point
+
+    bords = [LineString(anneau(c["pts"])) for c in lignes
+             if len(anneau(c["pts"])) >= 2]
+    out = []
+    for o in scn.lignes.get("portail", []):
+        a = np.asarray(o["pts"], float)
+        if len(a) != 2:
+            continue
+        L = math.hypot(*(a[1] - a[0]))
+        if not (PORTAIL_MIN <= L <= PORTAIL_MAX):
+            continue
+        if all(any(b.distance(Point(*p)) <= tol for b in bords) for p in a):
+            out.append((((a[0][0] + a[1][0]) / 2, (a[0][1] + a[1][1]) / 2),
+                        math.degrees(math.atan2(a[1][0] - a[0][0],
+                                                a[1][1] - a[0][1])), L))
+    return out
+
+
 def portails(scn, verbose=False):
     """Portails du plan : (centre, cap, largeur), lus sur la clôture.
 
-    Le portail est le segment de clôture dont les DEUX bouts sont des pointes
-    de vantail. A defaut de clôture — ou si le plan n'y fait pas coincider les
-    pivots — on retombe sur la paire de pivots elle-meme.
+    Le portail est d'abord le segment DESSINE dont les deux bouts touchent la
+    clôture (voir `_cordes`). A defaut, c'est le segment de clôture dont les
+    DEUX bouts sont des pointes de vantail ; a defaut encore, la paire de
+    pivots elle-meme.
     """
+    cordes = _cordes(scn)
+    if cordes:
+        if verbose:
+            print(f"  portails : {len(cordes)} lu(s) au plan, en corde de "
+                  f"cloture ({', '.join(f'{L:.2f} m' for _c, _a, L in cordes)})")
+        return cordes
+
     piv = _pivots(scn)
     if not piv:
         return []

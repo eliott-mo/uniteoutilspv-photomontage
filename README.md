@@ -249,6 +249,35 @@ arrondis — et `lecture_dxf` ne lisait pas les splines. La citerne de refroidis
 11,70 × 9,32 m sur les deux, soit le gabarit UNITe (11,7 × 8,9, 104 m² au bilan) au
 centimètre sur la longueur.
 
+**Une enceinte propre casse ce qu'un tracé bavard cachait.** Les deux défauts suivants ne
+se voyaient pas tant que les plans venaient d'un DXF, où la clôture est tracée en dizaines
+de segments courts — celle de Sarnois en a cinquante-quatre. Ils sont sortis **ensemble**
+au premier montage depuis un contrat reconstitué à partir d'un plan PDF, dont l'enceinte
+est un quadrilatère de quatre côtés de 170 à 190 m.
+
+- **Le grillage se détachait de ses piquets.** Les piquets prennent le sol un par un tous
+  les trois mètres ; la nappe, elle, faisait un quad par segment et interpolait en ligne
+  droite. Mesuré sur Gannay, pourtant plat (201,4 à 201,9 m sur l'enceinte) : jusqu'à
+  **0,49 m d'écart sur une clôture de 2,00 m**, toujours vers le haut.
+- **Un portail effaçait tout son segment.** L'ouverture se jugeait sur le *milieu* du
+  segment : un portail de 3,4 m au milieu d'un côté de 170 m en supprimait les 170 mètres,
+  et un portail ailleurs qu'au milieu n'ouvrait rien du tout. Il restait **3 faces de
+  grillage au lieu de 166**.
+
+**Quand le plan dessine le portail, il faut le lire plutôt que le déduire.** Un DXF de
+bureau d'études ne trace souvent que les vantaux — d'où l'heuristique des pivots. Un
+contrat, lui, écrit le portail en cinq entités, dont **un segment dont les deux bouts
+touchent la clôture** : c'est lui, le portail. L'heuristique des pivots cherchait un
+segment de clôture de la bonne largeur, n'en trouvait aucun sur une enceinte à quatre
+côtés, et retombait sur l'écartement des pivots — **3,38 m pour un portail déclaré à
+7,00 m**. Attention : les vantaux aussi partent de la clôture, mais leur pointe s'en écarte
+(0,11 m pour le bout tenu, 3,39 m pour la pointe), donc il faut tester **les deux** bouts.
+
+**Un test sur les sommets ne voit pas un défaut d'interpolation.** Le décollement du
+grillage, écrit en testant les sommets, passait sur le code fautif : celui-ci n'en pose que
+deux par segment, les deux bouts, et un bout est toujours exactement sur le sol. Tout le
+défaut est entre eux. Même piège que l'échantillonnage du garde-fou de prise de vue.
+
 **Un heredoc Bash long se tronque.** Au-delà d'une centaine de lignes, écrire le fichier,
 pas le coller dans le shell.
 

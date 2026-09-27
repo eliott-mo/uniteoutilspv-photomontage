@@ -136,34 +136,63 @@ def geometrie_cloture(scn, sol_abs, E0, N0, dmax=300.0, ouvertures=()):
             L = math.hypot(*(b - a))
             if L < 0.2:
                 continue
-            if _ouvert((a[0] + b[0]) / 2, (a[1] + b[1]) / 2):
-                s0 += L
-                continue
-            if math.hypot((a[0] + b[0]) / 2 - E0, (a[1] + b[1]) / 2 - N0) < dmax:
-                za, zb = sol_abs(*a), sol_abs(*b)
+            # ⚠️ LE GRILLAGE SE DECOUPE PANNEAU PAR PANNEAU, de piquet a piquet.
+            #
+            # Il a longtemps fait UN quad par segment de polyligne, ce qui ne
+            # se voyait pas tant que les plans venaient d'un DXF : la cloture
+            # de Sarnois y est tracee en cinquante-quatre segments d'une
+            # dizaine de metres. Un contrat reconstitue depuis un plan PDF, lui,
+            # rend une enceinte PROPRE — celle de Gannay est un quadrilatere de
+            # quatre segments de 170 a 190 m. Deux defauts sortaient alors
+            # ensemble, et aucun des deux ne se lisait sur un rendu :
+            #
+            #   - LE GRILLAGE SE DETACHAIT DE SES PIQUETS. Les piquets prennent
+            #     le sol un par un tous les trois metres ; la nappe, elle,
+            #     interpolait en ligne droite d'un bout a l'autre. Mesure sur
+            #     Gannay, pourtant plat (201,4 a 201,9 m sur l'enceinte) :
+            #     jusqu'a 0,49 m d'ecart, soit le QUART de la hauteur de
+            #     cloture, et toujours vers le haut.
+            #   - UN PORTAIL EFFACAIT TOUT SON SEGMENT. L'ouverture se testait
+            #     sur le MILIEU du segment : un portail de 3,4 m tombant au
+            #     milieu d'un segment de 170 m en supprimait les 170 metres, et
+            #     un portail tombant ailleurs n'ouvrait rien du tout. Sur cette
+            #     enceinte de quatre cotes, il n'en restait que trois.
+            #
+            # Decoupe au pas des piquets, les deux disparaissent : chaque
+            # panneau prend le sol a ses deux bouts, comme le piquet qui le
+            # porte, et l'ouverture ne retire que les panneaux qu'elle couvre.
+            panneaux = max(1, int(math.ceil(L / M.PAS_PIQUET)))
+            for j in range(panneaux):
+                ta, tb = j / panneaux, (j + 1) / panneaux
+                pa, pb = a + (b - a) * ta, a + (b - a) * tb
+                mx, my = (pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2
+                if _ouvert(mx, my) or math.hypot(mx - E0, my - N0) >= dmax:
+                    continue
+                za, zb = sol_abs(*pa), sol_abs(*pb)
+                sa, sb = s0 + L * ta, s0 + L * tb
                 grillage["f"].append(_quad(grillage["v"],
-                                           [a[0], a[1], za], [b[0], b[1], zb],
-                                           [b[0], b[1], zb + M.HAUTEUR_CLOTURE],
-                                           [a[0], a[1], za + M.HAUTEUR_CLOTURE]))
-                grillage["uv"] += [[s0, 0.0], [s0 + L, 0.0],
-                                   [s0 + L, M.HAUTEUR_CLOTURE], [s0, M.HAUTEUR_CLOTURE]]
-                depart = math.ceil(s0 / M.PAS_PIQUET) * M.PAS_PIQUET - s0
-                for s in np.arange(max(depart, 0.0), L, M.PAS_PIQUET):
-                    q = a + (b - a) * (s / L)
-                    if math.hypot(q[0] - E0, q[1] - N0) > dmax or _ouvert(*q):
-                        continue
-                    zs = sol_abs(q[0], q[1])
-                    r = M.DIAM_POTEAU / 2
-                    n = 8
-                    for k in range(n):
-                        t0 = 2 * math.pi * k / n
-                        t1 = 2 * math.pi * (k + 1) / n
-                        p0 = (q[0] + r * math.cos(t0), q[1] + r * math.sin(t0))
-                        p1 = (q[0] + r * math.cos(t1), q[1] + r * math.sin(t1))
-                        bois["f"].append(_quad(bois["v"],
-                                               [p0[0], p0[1], zs - 0.05], [p1[0], p1[1], zs - 0.05],
-                                               [p1[0], p1[1], zs + M.HAUTEUR_CLOTURE + 0.12],
-                                               [p0[0], p0[1], zs + M.HAUTEUR_CLOTURE + 0.12]))
+                                           [pa[0], pa[1], za], [pb[0], pb[1], zb],
+                                           [pb[0], pb[1], zb + M.HAUTEUR_CLOTURE],
+                                           [pa[0], pa[1], za + M.HAUTEUR_CLOTURE]))
+                grillage["uv"] += [[sa, 0.0], [sb, 0.0],
+                                   [sb, M.HAUTEUR_CLOTURE], [sa, M.HAUTEUR_CLOTURE]]
+            depart = math.ceil(s0 / M.PAS_PIQUET) * M.PAS_PIQUET - s0
+            for s in np.arange(max(depart, 0.0), L, M.PAS_PIQUET):
+                q = a + (b - a) * (s / L)
+                if math.hypot(q[0] - E0, q[1] - N0) > dmax or _ouvert(*q):
+                    continue
+                zs = sol_abs(q[0], q[1])
+                r = M.DIAM_POTEAU / 2
+                n = 8
+                for k in range(n):
+                    t0 = 2 * math.pi * k / n
+                    t1 = 2 * math.pi * (k + 1) / n
+                    p0 = (q[0] + r * math.cos(t0), q[1] + r * math.sin(t0))
+                    p1 = (q[0] + r * math.cos(t1), q[1] + r * math.sin(t1))
+                    bois["f"].append(_quad(bois["v"],
+                                           [p0[0], p0[1], zs - 0.05], [p1[0], p1[1], zs - 0.05],
+                                           [p1[0], p1[1], zs + M.HAUTEUR_CLOTURE + 0.12],
+                                           [p0[0], p0[1], zs + M.HAUTEUR_CLOTURE + 0.12]))
             s0 += L
     return bois, grillage
 

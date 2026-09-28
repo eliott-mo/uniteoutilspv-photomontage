@@ -106,7 +106,7 @@ def _emprise(scn, est, nord, marge):
             a[:, 0].max() + marge, a[:, 1].max() + marge)
 
 
-def point_du_rapport(rapport, nom_photo):
+def point_du_rapport(rapport, nom_photo, exiger=False):
     """Position et cap d'une photo, lus dans une carte `photos-geoloc`.
 
     ⚠️ LE POINT DU RAPPORT VAUT MIEUX QUE L'EXIF, et c'est tout l'interet de
@@ -118,26 +118,47 @@ def point_du_rapport(rapport, nom_photo):
     La carte range la position saisie dans `lat`/`lon` (valeur DEDUITE de
     `lat_brut` et `lat_manuel`) et le cap dans `cap`. Rend None si la photo
     n'y figure pas — auquel cas l'EXIF reprend la main.
+
+    ⚠️ `nom_photo` DESIGNE L'ENTREE DE LA CARTE, PAS FORCEMENT LE FICHIER. Le
+    dossier d'un chef de projet range rarement les photos sous le nom que la
+    carte leur donne : a Gannay, la vue de cap 314 y figure sous
+    `20260821_110154AMByGPSMapCamera.jpg` et se trouve au dossier sous
+    `Photo 2 - PHOM.jpeg` et `image00012.jpeg` — deux noms pour un seul
+    fichier, empreintes identiques. `exiger` sert alors a nommer l'entree a la
+    main, et a REFUSER plutot que de retomber en silence sur un EXIF qui,
+    justement, n'a pas de position.
     """
     s = Path(rapport).read_text(encoding="utf-8", errors="replace")
     m = re.search(r'<script id="donnees-carte"[^>]*>(.*?)</script>', s, re.S)
     if not m:
+        if exiger:
+            raise ValueError(f"{Path(rapport).name} n'est pas une carte "
+                             f"photos-geoloc : pas de bloc donnees-carte.")
         return None
+    points = json.loads(m.group(1)).get("points", [])
     cible = Path(nom_photo).stem.lower()
-    for p in json.loads(m.group(1)).get("points", []):
+    for p in points:
         if Path(str(p.get("nom", ""))).stem.lower() != cible:
             continue
         if p.get("lat") is None or p.get("lon") is None:
+            if exiger:
+                raise ValueError(f"le point {p.get('nom')!r} de la carte n'a "
+                                 f"pas de position.")
             return None
         return {"lat": float(p["lat"]), "lon": float(p["lon"]),
                 "cap": None if p.get("cap") is None else float(p["cap"]),
                 "source": str(p.get("source_position") or "?")}
+    if exiger:
+        raise ValueError(
+            f"aucun point nomme {nom_photo!r} dans {Path(rapport).name}. "
+            f"Points de la carte : "
+            + ", ".join(str(p.get("nom")) for p in points if not p.get("masque")))
     return None
 
 
 def preparer(plan, photo, sortie, azimut=None, tangage=0.0, roulis=0.0,
              hauteur_oeil=1.60, rogner_bas=0, titre=None, rapport=None,
-             verbose=True):
+             vue=None, verbose=True):
     """Ecrit la page de calage. Rend le dictionnaire de depart.
 
     `plan` est un DXF ou un dossier de contrat, indifferemment.
@@ -152,7 +173,8 @@ def preparer(plan, photo, sortie, azimut=None, tangage=0.0, roulis=0.0,
             f"photos-geoloc ne la porte pas non plus : elle reencode les "
             f"photos sans metadonnees. Il faut le fichier SORTI DU TELEPHONE.")
 
-    pt = point_du_rapport(rapport, photo) if rapport else None
+    pt = (point_du_rapport(rapport, vue or photo, exiger=bool(vue))
+          if rapport else None)
     if pt is not None:
         lon, lat = pt["lon"], pt["lat"]
         if azimut is None and pt["cap"] is not None:
@@ -298,6 +320,10 @@ def main():
     p.add_argument("--rapport",
                    help="carte photos-geoloc : sa position replacee et son "
                         "cap calibre priment sur l'EXIF")
+    p.add_argument("--vue",
+                   help="nom de l'entree DANS LA CARTE, quand le fichier "
+                        "porte un autre nom. Refuse au lieu de retomber sur "
+                        "l'EXIF.")
     a = p.parse_args()
     if a.projet:
         if not 1 <= len(a.args) <= 2:
@@ -311,7 +337,7 @@ def main():
         p.error("donner PLAN PHOTO SORTIE, ou --projet NOM PHOTO")
     preparer(plan, photo, sortie, azimut=a.azimut, tangage=a.tangage,
              roulis=a.roulis, hauteur_oeil=a.oeil, rapport=rapport,
-             rogner_bas=a.rogner_bas, titre=a.titre)
+             vue=a.vue, rogner_bas=a.rogner_bas, titre=a.titre)
     return 0
 
 

@@ -287,7 +287,7 @@ def materiaux(reglages=None):
         # donnent peint, RAL 6003 vert olive dans plus d'un cas sur deux. Le
         # materiau est procedural (joints de banche, coulures, boue) parce que
         # l'aplat precedent se lisait comme un aplat.
-        "beton": MP.beton_peint("beton", MP.RAL[r.get("ral_poste", "6003")],
+        "beton": MP.beton_peint("beton", MP.saturer(MP.RAL[r.get("ral_poste", "6003")]),
                                 hauteur=r.get("hauteur_poste", 3.0),
                                 usure=r.get("usure", 1.0)),
         "couvertine": _mat("couvertine", MP.COUVERTINE, 0.72, 0.0),
@@ -296,12 +296,13 @@ def materiaux(reglages=None):
         # portes et lamelles : peintes du meme RAL que le corps, un ton plus
         # sombre. Les PC5 ne montrent nulle part d'acier nu sur un poste ; une
         # menuiserie metallique rendue en metal sort noire sous un ciel diffus.
-        "menuiserie": _mat("menuiserie", MP._teinte(MP.RAL["6003"], 0.78), 0.48,
+        "menuiserie": _mat("menuiserie",
+                           MP.saturer(MP._teinte(MP.RAL["6003"], 0.78)), 0.48,
                            0.10, 0.0, 0.40),
         "grave": MP.grave("grave", r.get("grave_taille", 0.032)),
         # bache souple : soudures de les, fronçage de pied, satine du PVC,
         # releves sur des photos de citernes en service (cf. materiaux_proc).
-        "pvc": MP.bache_pvc("pvc", MP.RAL["6011"], r.get("laize", 1.50),
+        "pvc": MP.bache_pvc("pvc", MP.saturer(MP.RAL["6011"]), r.get("laize", 1.50),
                             r.get("usure", 1.0)),
         # raccord pompier : RAL 3000 rouge feu, laque. Seul element
         # franchement colore de l'ouvrage, et le plus reconnaissable.
@@ -315,7 +316,7 @@ def materiaux(reglages=None):
         "plaque": _mat("plaque", (240, 239, 234), 0.62, 0.0, 0.0, 0.40),
         # bardage de conteneur : l'ondulation est de la GEOMETRIE, le
         # materiau ne porte que la patine.
-        "tole": MP.tole_peinte("tole", MP.RAL[r.get("ral_conteneur", "6003")],
+        "tole": MP.tole_peinte("tole", MP.saturer(MP.RAL[r.get("ral_conteneur", "6003")]),
                                r.get("usure", 1.0)),
         "coin": _mat("coin", (58, 60, 58), 0.52, 0.45, 0.0, 0.45),
         # haie : teinte prise sur la vegetation de la photo

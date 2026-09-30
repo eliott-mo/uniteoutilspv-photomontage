@@ -815,8 +815,17 @@ def traits_verticaux(a, garde, largeur_max=TRAIT_LARGEUR_MAX,
     lab, n = ndimage.label(suspect, np.ones((3, 3), bool))
     for i, tr in enumerate(ndimage.find_objects(lab), start=1):
         ys, xs = tr
-        w = xs.stop - xs.start
         haut = ys.stop - ys.start
+        bande = (lab[ys, xs] == i)
+        lignes = np.flatnonzero(bande.any(axis=1))
+        if not lignes.size:
+            continue
+        # ⚠️ LA LARGEUR SE JUGE PAR LIGNE, PAS SUR LA BOITE ENGLOBANTE. Un mat
+        # PENCHE — celui de Saint-Cyr derive de dix pixels sur sa hauteur —
+        # remplit une boite de treize colonnes pour trois de large. Juge sur la
+        # boite, il se faisait ecarter comme « trop large », et le seul vrai
+        # trait de l'image passait a la trappe.
+        w = float(np.median(bande.sum(axis=1)[lignes]))
         if w > largeur_max * W:
             larges += 1
             continue
@@ -833,14 +842,23 @@ def traits_verticaux(a, garde, largeur_max=TRAIT_LARGEUR_MAX,
         # ouvrait dans les tables un trou trois fois trop large, que le chef de
         # projet a vu. On garde les colonnes occupees sur au moins la moitie des
         # lignes de l'amas, plus un pixel de marge de chaque cote.
-        bande = (lab[ys, xs] == i)
-        occupe = np.flatnonzero(bande.mean(axis=0) >= 0.5)
-        if not occupe.size:
-            occupe = np.flatnonzero(bande.any(axis=0))
-        x0 = xs.start + int(occupe.min()) - 1
-        x1 = xs.start + int(occupe.max()) + 2
-        for x in range(max(0, x0), min(W, x1)):
-            m[ys.start:vg, x] = True
+        # ⚠️ UN MAT PENCHE, ET UNE BANDE VERTICALE NE LE SUIT PAS. Celui de
+        # Saint-Cyr derive d'une dizaine de pixels sur sa hauteur : masque par
+        # un rectangle, il laissait une fente pale qui ne se superposait pas au
+        # pylone. On ajuste donc une DROITE sur les centres de l'amas ligne par
+        # ligne, et on la prolonge jusqu'a la garde.
+        centres = np.array([bande[k].nonzero()[0].mean() for k in lignes])
+        if len(lignes) >= 4:
+            a1, a0 = np.polyfit(lignes.astype(float), centres, 1)
+        else:
+            a1, a0 = 0.0, float(centres.mean())
+        # Largeur masquee : celle du trait, plus UN pixel de chaque cote pour
+        # couvrir son anticrenelage. Le chef de projet avait releve un trou
+        # trois fois trop large, quand on masquait la boite englobante.
+        demi = max(1, int(math.ceil((w + 1) / 2)))
+        for y in range(ys.start, vg):
+            cx = int(round(xs.start + a0 + a1 * (y - ys.start)))
+            m[y, max(0, cx - demi):min(W, cx + demi + 1)] = True
         gardes += 1
     if verbose:
         print(f"  traits verticaux : {gardes} retenu(s), {larges} trop large(s), "

@@ -150,7 +150,7 @@ def test_le_masque_suit_la_largeur_reelle_pas_la_boite():
     a[334, 888] = 182
     m = MA.traits_verticaux(a, 431, verbose=False)
     larges = (m[400] > 0.5).sum()
-    assert larges <= 6, f"{larges} colonnes masquees pour un mat de 3 px"
+    assert larges <= 5, f"{larges} colonnes masquees pour un mat de 3 px"
     assert m[400, 879] > 0.5
 
 
@@ -177,3 +177,27 @@ def test_les_plages_bornent_la_remontee(tmp_path, monkeypatch):
     assert vues[-1] == [(0, 1224)], "sans declaration, toute la largeur"
     MA.masque_complet(f, f, plages=[(350, 405), (862, 895)], verbose=False)
     assert vues[-1] == [(350, 405), (862, 895)]
+
+
+def test_le_masque_suit_l_axe_d_un_mat_penche():
+    """⚠️ UN MAT PENCHE, ET UNE BANDE VERTICALE NE LE SUIT PAS.
+
+    Celui de Saint-Cyr derive d'une dizaine de pixels sur sa hauteur. Masque
+    par un rectangle vertical, il laissait sur les tables une fente pale qui
+    ne se superposait pas au pylone — visible a l'oeil. On ajuste donc une
+    droite sur les centres de l'amas, ligne par ligne, et on la prolonge.
+    """
+    H, W, garde = 618, 1224, 431
+    a = np.full((H, W, 3), 200, np.uint8)
+    a[:, :, 2] = 215
+    a[380:garde] = 70
+    a[garde:] = 110
+    for y in range(330, 378):               # mat incline : 10 px de derive
+        x = 860 + int(round((y - 330) * 10 / 48))
+        a[y, x:x + 3] = 182
+    m = MA.traits_verticaux(a.astype(float), garde, verbose=False)
+    haut = np.flatnonzero(m[335] > 0.5)
+    bas = np.flatnonzero(m[425] > 0.5)
+    assert haut.size and bas.size, "le mat doit etre masque en haut comme en bas"
+    derive = bas.mean() - haut.mean()
+    assert derive > 8, f"le masque ne suit pas l'inclinaison ({derive:.1f} px)"

@@ -89,6 +89,31 @@ def _rgba(c):
     return (*[_srgb_lin(v) for v in c], 1.0)
 
 
+#: Facteur de chroma applique aux peintures avant le rendu.
+#:
+#: ⚠️ UN CIEL BLEU DIFFUS DESATURE LA PEINTURE, et la mesure le chiffre. Le
+#: poste de Saint-Cyr, monte en RAL 6003 — (61, 69, 46), saturation 0,333 —
+#: ressortait du rendu a (36, 44, 39), saturation 0,182 : la moitie du chroma
+#: perdue avant meme toute brume. Le chef de projet a demande « on n'a pas un
+#: truc un peu vert olive plutot ? » devant un gris, alors que la teinte visee
+#: etait bien la bonne dans le code.
+#:
+#: Le depot notait deja l'effet sur le bois d'acacia — « il faut une base plus
+#: saturee que la couleur voulue pour la retrouver » — sans l'appliquer aux
+#: peintures. 1,85 est le rapport mesure 0,333/0,182, arrondi.
+CHROMA_PEINTURE = 1.85
+
+
+def saturer(c, k=CHROMA_PEINTURE):
+    """Ecarte la couleur de son gris, a luminance constante.
+
+    On tire sur le CHROMA seul : la luminance ne bouge pas, donc le materiau
+    reste aussi clair ou sombre qu'avant et seul son caractere colore revient.
+    """
+    L = 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
+    return tuple(float(min(255.0, max(0.0, L + (v - L) * k))) for v in c)
+
+
 def _teinte(c, k, vers=None):
     """Eclaircit (k>1) ou assombrit (k<1), en tirant vers `vers` si donne."""
     if vers is None:

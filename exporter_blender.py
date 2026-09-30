@@ -206,7 +206,12 @@ def _brume(pose, photo, bande=0.06):
     le temps change, et c'est precisement ce qu'une brume doit suivre.
     """
     b = pose.get("brume")
-    if not b or not b.get("portee_m"):
+    if not b:
+        return None
+    portee = b.get("portee_m")
+    if not portee and b.get("visibilite_km"):
+        portee = float(b["visibilite_km"]) * 1000.0 / 3.912
+    if not portee:
         return None
     couleur = b.get("couleur")
     if couleur is None:
@@ -216,7 +221,7 @@ def _brume(pose, photo, bande=0.06):
         h = max(2, int(bande * H))
         bandeau = a[max(0, y - h):max(1, y), :, :]
         couleur = [float(np.median(bandeau[..., i])) for i in range(3)]
-    return {"portee_m": float(b["portee_m"]), "couleur": couleur}
+    return {"portee_m": float(portee), "couleur": couleur}
 
 
 def couleur_du_sol(chemin_photo, horizon, bande=0.18):
@@ -767,9 +772,13 @@ def exporter(num, sortie, pose=None, scn=None, dossier=None):
         # d'extinction est une propriete du JOUR ou la photo a ete prise, et
         # qu'elle se mesure sur cette photo-la : prendre deux masses sombres de
         # meme nature a deux distances connues, et resoudre
-        # portee = -d / ln(1 - (L_loin - L_proche) / (L_ciel - L_proche)).
-        # Sur Saint-Cyr, 57 a 25 m et 88 a 400 m pour un ciel a 208 donnent
-        # 1 742 m. Absente, il n'y a pas de brume et rien ne change.
+        # portee = -d / ln(1 - (L_loin - L_proche) / (L_ciel - L_proche)),
+        # ⚠️ AVEC DES LUMINANCES LINEARISEES. Le melange se fait en radiance,
+        # pas en valeurs d'affichage : la meme mesure faite sur les octets de
+        # l'image donne 1 742 m la ou le calcul juste donne 3 800 a 5 100 m sur
+        # Saint-Cyr — un facteur trois, et un montage qui vire au gris.
+        # On peut aussi declarer `visibilite_km`, la grandeur meteo courante :
+        # portee = V / 3,912 (Koschmieder). Absente, il n'y a pas de brume.
         "brume": _brume(pose, _photo),
         # teinte du feuillage prise sur la photo elle-meme
         "materiaux": {"herbe_rgb": couleur_du_sol(

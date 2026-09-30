@@ -253,10 +253,20 @@ livrés de la banque de références vont de 0,089 à 0,444 — sous le plancher
 a été livré. Deux causes, mesurées séparément. Le verre était calé sur une vue à 78° où
 l'on voit la *face avant* ; ici l'incidence vaut 94°, donc **on voit le dos**, et Cycles y
 appliquait le même verre, qui ne réfléchit plus rien (0,062 → 0,083). Et il manquait la
-**perspective aérienne**, que la photo chiffre elle-même : végétation sombre à L ≈ 57 vers
-25 m, L ≈ 88 vers 400 m pour un ciel à 208, soit une portée d'extinction de 1 742 m
-(0,083 → **0,238**, dans la bande). La portée se déclare à la pose, parce que c'est une
-propriété du *jour* de la prise de vue ; absente, rien ne change.
+**perspective aérienne**. Elle se déclare à la pose — c'est une propriété du *jour* de la
+prise de vue, pas du site — soit en portée d'extinction, soit en `visibilite_km`, la
+grandeur météo courante (Koschmieder : portée = V / 3,912). Absente, rien ne change.
+
+⚠️ **Elle se mesure sur des luminances LINÉARISÉES.** Le mélange se fait en radiance, pas
+en valeurs d'affichage : la même mesure faite sur les octets de l'image a donné 1 742 m là
+où le calcul juste en donne 3 800 à 5 100 — un facteur trois, et un montage qui vire au
+gris. À 18 km, Saint-Cyr sort à **0,167**, dans la bande.
+
+**Et un ciel bleu diffus désature la peinture de moitié.** Le poste, monté en RAL 6003 —
+saturation 0,333 — ressortait à 0,182 *avant toute brume*. Le dépôt notait déjà l'effet sur
+le bois sans l'appliquer aux peintures ; `materiaux_proc.saturer` écarte désormais la
+couleur de son gris à luminance constante. La photo donne la cible : sa végétation garde
+une saturation de 0,431 à 130 m contre 0,500 à 25 m — à ces distances, le chroma survit.
 
 **Trois sources font le masque de premier plan, et en oublier une ne se voit pas comme un
 bug.** La ligne de garde pose la certitude géométrique ; la remontée l'étend le long des

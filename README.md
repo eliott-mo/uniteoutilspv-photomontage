@@ -385,6 +385,13 @@ du capteur. Les six sont détectées.
 - **Sur une vue rapprochée, le feuillage est hors domaine.** Les cartes font 18 à 40 cm :
   3 à 7 px à 180 m, mais jusqu'à 745 px à 1,7 m, où elles se lisent comme des plaques. Il
   faudrait une géométrie de feuille pour le premier mètre.
+- **Il n'y a pas de perspective aérienne au rendu**, et elle n'est pas négligeable. Mesuré
+  sur la photo de Saint-Cyr, qui se calibre elle-même : une végétation sombre passe de
+  L ≈ 57 à 25 m à L ≈ 88 à 400 m, soit **environ 20 % de ciel mêlé**. Appliqué aux tables,
+  entre 56 et 254 m, le rapport au ciel passerait de 0,083 à ~0,17 — c'est-à-dire dans la
+  bande des trente-sept photomontages livrés (0,089 à 0,444), là où il est aujourd'hui
+  *sous* leur plancher. Il faut une passe de profondeur depuis Blender et un mélange au
+  composite.
 - **La position GPS d'un téléphone vaut 5 à 10 m.** Négligeable à 100-400 m, déterminante
   quand la clôture passe à 3,8 m.
 - **Le bac de rétention n'est pas monté**, faute de géométrie. Le catalogue le cote

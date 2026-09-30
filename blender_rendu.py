@@ -119,6 +119,50 @@ def _mat_herbe(base, rugosite=0.94, opacite=OPACITE_HERBE):
     return m
 
 
+def _module_deux_faces(base, rugosite, specular, dos, dos_rugosite=0.62):
+    """Un module a DEUX faces, et le materiau n'en decrivait qu'une.
+
+    ⚠️ CE QUE SAINT-CYR A REVELE. Le calage du verre a ete fait sur une vue a
+    78 degres d'incidence : on y voit la FACE AVANT en rasant, elle reflechit
+    le ciel, et le rapport au ciel tombe a 0,265 comme la reference le veut.
+    A Saint-Cyr, la camera regarde a l'est-sud-est des modules tournes au sud :
+    l'incidence mediane vaut 94 degres, de 85 a 102 — ON VOIT LE DOS.
+
+    Cycles appliquait alors le meme verre par l'arriere, ou il ne reflechit
+    plus rien : rapport au ciel 0,062, soit quatre fois trop sombre, et
+    au-dessous du plus sombre des trente-sept photomontages livres de la banque
+    de references (0,089, mediane 0,266). Le chef de projet l'a vu a l'oeil.
+
+    Le dos d'un module n'est pas du verre : c'est un film polymere clair tendu
+    dans un cadre d'aluminium. On le decrit donc pour ce qu'il est, et on
+    bascule sur la NORMALE GEOMETRIQUE — ce qui vaut pour toutes les vues, sans
+    seuil ni reglage par site.
+    """
+    m = bpy.data.materials.new("module")
+    m.use_nodes = True
+    nt = m.node_tree
+    avant = nt.nodes["Principled BSDF"]
+    avant.inputs["Base Color"].default_value = (*[_srgb_lin(c) for c in base], 1.0)
+    avant.inputs["Roughness"].default_value = rugosite
+    if "Specular IOR Level" in avant.inputs:
+        avant.inputs["Specular IOR Level"].default_value = specular
+
+    arriere = nt.nodes.new("ShaderNodeBsdfPrincipled")
+    arriere.inputs["Base Color"].default_value = (*[_srgb_lin(c) for c in dos], 1.0)
+    arriere.inputs["Roughness"].default_value = dos_rugosite
+    if "Specular IOR Level" in arriere.inputs:
+        arriere.inputs["Specular IOR Level"].default_value = 0.20
+
+    geo = nt.nodes.new("ShaderNodeNewGeometry")
+    mix = nt.nodes.new("ShaderNodeMixShader")
+    nt.links.new(geo.outputs["Backfacing"], mix.inputs["Fac"])
+    nt.links.new(avant.outputs["BSDF"], mix.inputs[1])
+    nt.links.new(arriere.outputs["BSDF"], mix.inputs[2])
+    sortie = nt.nodes["Material Output"]
+    nt.links.new(mix.outputs["Shader"], sortie.inputs["Surface"])
+    return m
+
+
 def _grillage(maille=0.20, fil=0.006):
     """Grillage rigide : opaque sur les fils, transparent entre eux.
 
@@ -175,13 +219,19 @@ def materiaux(reglages=None):
     # demanderait de le refaire. Le bon modele serait une reflectance fonction
     # de l'angle d'incidence, calee sur des references dont on connaitrait la
     # geometrie de prise de vue — ce que le references.csv ne donne pas.
+    #
+    # LE DOS, lui, n'est pas du verre : film polymere clair dans un cadre
+    # d'aluminium. Voir `_module_deux_faces` — c'est ce qui manquait, et non un
+    # reglage a pousser.
     r = dict(module_rugosite=0.80, module_specular=0.06,
-             module_base=(84, 74, 44), acier_rugosite=0.58)
+             module_base=(84, 74, 44), module_dos=(146, 146, 143),
+             acier_rugosite=0.58)
     r.update(reglages or {})
     return {
         # verre de module : tres lisse, donc il reflechit le ciel pour de vrai
-        "module": _mat("module", tuple(r["module_base"]), r["module_rugosite"],
-                       0.0, 0.0, r["module_specular"]),
+        "module": _module_deux_faces(tuple(r["module_base"]),
+                                     r["module_rugosite"], r["module_specular"],
+                                     tuple(r["module_dos"])),
         "acier": _mat("acier", (104, 106, 104), r["acier_rugosite"], 0.70),
         # acacia ecorce : miel grisant, pas brun sombre
         # Sous un ciel bleute diffus, un bois chaud se desature fortement au rendu :

@@ -247,6 +247,23 @@ clarté : un peuplier d'hiver au soleil est plus *clair* que le ciel (190 contre
 un ciel tient dans six niveaux de R−B (−104 à −98) là où le rideau d'arbres va de −82
 à −19.
 
+**Le catalogue du contrat fait autorité sur les hauteurs, et sur elles seules.**
+`generateur-dp` fait voyager les dix-sept ouvrages cotés d'UNITe sous `cotes_normalisees`.
+Deux règles en sortent, qu'aucune autre source ne donnait. D'abord, **une ligne sans
+hauteur est une surface** : une seule des dix-sept en est dépourvue, « Aire d'aspiration,
+8 × 4 m » — ce qui a corrigé la « zone de remise » (12 × 3 × **3**) et le « bac de
+rétention » (17,5 × 3 × **2,3**), que j'avais pris pour des ouvrages de sol. Ensuite, **la
+plus étroite largeur cotée est 3 m** : en dessous, un contour n'est aucun ouvrage UNITe.
+C'est ce qui a réparé les trois postes empilés de Saint-Cyr — trois bandes accolées de
+3,00 / 1,50 / 1,00 m sur `UNI_PDL`, que la nidification ne pouvait pas départager
+puisqu'elles ne se recouvrent pas du tout.
+
+**Et la hauteur se choisit sur l'empreinte, pas sur le nom de la catégorie.** Le catalogue
+porte quatre citernes incendie — 30, 60, 120, 240 m³, de 1,30 à 1,60 m de haut — plus une
+de refroidissement. Chercher « citerne » par sous-chaîne prenait la première venue. Le
+plan, lui, dit exactement laquelle c'est : à Saint-Cyr il dessine 8,08 × 7,40, à 3 cm de
+la « Citerne incendie — 60 » quand la deuxième candidate est à 3,9 m.
+
 **Un bloc de fabricant dessine l'ouvrage et ses entrailles.** `BESS Skyray` porte 77
 contours : le conteneur de 6,06 × 3,00 m, mais aussi sa paroi intérieure, trente-six
 racks de 2,32 × 0,12 m et leur boulonnerie de 5 cm. Montés, cela faisait trente-huit
@@ -370,15 +387,7 @@ du capteur. Les six sont détectées.
   faudrait une géométrie de feuille pour le premier mètre.
 - **La position GPS d'un téléphone vaut 5 à 10 m.** Négligeable à 100-400 m, déterminante
   quand la clôture passe à 3,8 m.
-- **La « zone de remise » du BESS est prise pour une aire durcie, pas pour un volume.**
-  12,01 × 3,00 m sur les trois plans qui en portent une, soit l'empreinte exacte d'un
-  conteneur 40 pieds — et c'est justement pourquoi le doute existe. Le bilan la compte en
-  *surface* (« Zone de remise (36 m²) ») là où il compte les conteneurs en *nombre*, et la
-  liste séparément du « local de stockage matériel », qui fait aussi 36 m². Le doute est
-  assumé dans ce sens-là : monter un volume de 3 m de haut qui n'existe pas se voit sur un
-  photomontage, poser une dalle plate là où le sol est nu ne se voit à aucune distance
-  utile.
-- **Le bac de rétention n'est pas monté du tout.** Son MTEXT dit « Bac de rétention
-  120 m³ » : c'est un *creux* dans le sol, 16,90 × 3,00 m à Auzainvilliers. Le rendre en
-  dalle surélevée de 4 cm serait un ressaut que le plan ne porte pas, et on n'a pas sa
-  profondeur.
+- **Le bac de rétention n'est pas monté**, faute de géométrie. Le catalogue le cote
+  17,5 × 3 × 2,3 m — 120,75 m³, soit les « 120 m³ » du MTEXT — donc c'est bien un ouvrage
+  au-dessus du sol, et non le creux que j'avais d'abord cru. Ni le conteneur bardé ni la
+  bâche souple ne lui vont.

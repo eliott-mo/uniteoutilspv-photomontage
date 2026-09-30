@@ -69,19 +69,31 @@ def test_rectangle_mini_refuse_une_polyligne_a_deux_points():
 
 # -------------------------------------------------------------- les cotes
 def test_le_plan_prime_sur_le_gabarit_mais_pas_pour_la_hauteur():
-    """La bache de Saint-Cyr : 8,08 x 7,40 au plan, 11,70 x 8,90 au gabarit.
+    """La bache de Saint-Cyr : 8,08 x 7,40 au plan, 11,70 x 9,30 au gabarit.
 
     Montee au gabarit, elle debordait de 15 % de son aire hors de l'enceinte,
     et la cloture la traversait.
+
+    La HAUTEUR reste celle du gabarit ici, faute de contrat. Avec un contrat,
+    elle se choisit sur l'empreinte — voir `test_catalogue.py`, ou cette meme
+    empreinte designe la « Citerne incendie — 60 », haute de 1,50 m.
     """
     g = OT._cotes(None, "citerne", OT.GABARITS["citerne"], mesure=(8.08, 7.40))
     assert (g["L"], g["l"]) == pytest.approx((8.08, 7.40))
-    assert g["h"] == pytest.approx(1.50)          # jamais lisible sur un plan
+    assert g["h"] == pytest.approx(OT.GABARITS["citerne"]["h"])
 
 
 def test_sans_plan_le_gabarit_reprend_la_main():
+    """⚠️ LE GABARIT CITERNE A ETE CORRIGE LE 30/09/2026.
+
+    Il valait 11,7 x 8,9 x 1,50, ce qui melangeait l'empreinte de la citerne
+    de 120 m3 et la hauteur de celle de 60. Le catalogue UNITe, arrive avec le
+    contrat de Saint-Cyr IND07, donne « Citerne incendie — 120 » a
+    11,7 x 9,3 x 1 m — et le trace du plan mesure 11,70 x 9,32 sur les deux
+    sites qui en portent une.
+    """
     g = OT._cotes(None, "citerne", OT.GABARITS["citerne"], mesure=None)
-    assert (g["L"], g["l"], g["h"]) == pytest.approx((11.7, 8.9, 1.5))
+    assert (g["L"], g["l"], g["h"]) == pytest.approx((11.7, 9.3, 1.0))
 
 
 def test_ordre_cotes_fait_foi_et_non_la_position_dans_la_chaine():

@@ -255,25 +255,45 @@ def test_une_diagonale_isolee_n_est_pas_une_citerne():
 
 
 # ------------------------------------------------------- la zone de remise
-def test_la_zone_de_remise_est_une_surface_pas_un_conteneur_de_plus():
-    """12,01 x 3,00 m — l'empreinte exacte d'un conteneur 40 pieds, et c'est
-    justement pourquoi le doute existe.
+def test_la_zone_de_remise_est_un_volume_et_je_l_avais_crue_plate():
+    """⚠️ CORRECTION DU 30/09/2026, SUR PIECE.
 
-    Le bilan la compte en SURFACE (« Zone de remise (36m2) ») la ou il compte
-    les conteneurs en NOMBRE, et la liste separement du « local de stockage
-    materiel », qui fait aussi 36 m2. On tranche donc pour l'aire durcie.
+    Le 24/09, faute de source, j'avais tranche pour une aire durcie : le
+    tableau bilan compte la zone de remise en SURFACE (36 m2) la ou il compte
+    les conteneurs en NOMBRE, et la liste separement du local de stockage, qui
+    fait aussi 36 m2. Le doute etait ecrit, et penchait vers le plat au motif
+    qu'un volume de trop se voit et qu'une dalle de trop ne se voit pas.
 
-    ⚠️ Le doute est assume DANS CE SENS-LA : monter un volume de 3 m de haut
-    qui n'existe pas se voit sur un photomontage, poser une dalle plate la ou
-    le sol est nu ne se voit a aucune distance utile.
+    Le catalogue UNITe, arrive avec le contrat de Saint-Cyr IND07, tranche :
+    « Zone de remise, 12 x 3 x 3m, longueur x largeur x HAUTEUR ». Sur ses
+    dix-sept ouvrages, une seule ligne est sans hauteur — « Aire d'aspiration,
+    8 x 4 m » — donc la distinction est deliberee. C'est l'empreinte d'un
+    conteneur 40 pieds, haut de 3 m.
     """
-    assert "remise" in OT.SURFACES
-    assert "remise" not in OT.MONTAGE
+    assert "remise" not in OT.SURFACES
+    assert OT.MONTAGE["remise"] == "conteneur"
 
     zone = _rect((E0, N0), 137.7, 12.01, 3.00, fermer=True)
     scn = _Scene({"remise": [{"pts": zone, "couche": "UNI_BESS_Zone_remise"}]})
     blocs, _ouv, registre = OT.ouvrages(scn, lambda x, y: 100.0, E0, N0,
                                         verbose=False)
+    assert [r["nom"] for r in registre] == ["conteneur"]
+    m = np.array(registre[0]["monte"])
+    cotes = sorted((math.dist(m[0], m[1]), math.dist(m[1], m[2])))
+    assert cotes == pytest.approx([3.00, 12.01], abs=1e-6)
+    # Aucune grave : le plan ne lui dessine pas de plateforme.
+    assert "grave" not in blocs
+
+
+def test_l_aire_d_aspiration_reste_plate_elle():
+    """C'est la SEULE ligne du catalogue sans hauteur, et ce n'est pas un oubli.
+
+    Le contraste est ce qui rend la regle lisible : sans une ligne plate pour
+    la porter, « une hauteur declaree » ne voudrait rien dire.
+    """
+    aire = _rect((E0, N0), 154.1, 8.0, 4.0, fermer=True)
+    scn = _Scene({"sdis": [{"pts": aire, "couche": "UNI_SDIS_Aire_d-aspiration"}]})
+    blocs, _ouv, registre = OT.ouvrages(scn, lambda x, y: 100.0, E0, N0,
+                                        verbose=False)
     assert registre == []
     assert set(blocs) == {"grave"}
-    assert _aire_bloc(blocs["grave"]) == pytest.approx(36.03, rel=1e-6)

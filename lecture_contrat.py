@@ -106,13 +106,16 @@ ECARTEES = {
     "ligne_coupe": "sert a la coupe du dossier DP, pas au montage",
     "espace_vert": "sans volume : le sol du site le couvre deja",
     "limite_paddock": "cloture legere non modelisee a ce jour",
-    "zone_contention": "sans volume modelise a ce jour",
     "bac_equarrissage": "sans volume modelise a ce jour",
-    # ⚠️ `bac_retention` reste ecarte, et ce n'est pas un oubli. Son MTEXT au
-    # plan dit « Bac de retention 120m3 » : c'est un CREUX dans le sol, de
-    # 16,90 x 3,00 m a Auzainvilliers. Le rendre en dalle surelevee de 4 cm
-    # serait un ressaut que le plan ne porte pas, et on n'a pas sa profondeur.
-    "bac_retention": "creux dans le sol : ni volume, ni dalle, profondeur inconnue",
+    # ⚠️ `bac_retention` reste ecarte, mais PAS pour la raison que j'y avais
+    # mise. J'avais ecrit « creux dans le sol », d'apres le MTEXT du plan
+    # (« Bac de retention 120m3 ») et son trace de 16,90 x 3,00 m. Le catalogue
+    # UNITe le cote « 17,5 x 3 x 2,3 m » — avec une HAUTEUR, donc au-dessus du
+    # sol — et 17,5 x 3 x 2,3 = 120,75 m3, soit exactement les 120 m3 annonces.
+    # C'est donc un ouvrage de 2,3 m de haut, pas un creux. Il reste ecarte
+    # faute de geometrie : ni conteneur bardé ni bache souple ne lui vont.
+    "bac_retention": "volume de 17,5 x 3 x 2,3 m, sans geometrie a ce jour",
+    "zone_contention": "sans volume modelise a ce jour",
     # INSTALLATIONS DE CHANTIER : portees au dossier DP, qui doit les declarer,
     # mais absentes d'un montage d'insertion paysagere, lequel montre l'etat
     # ACHEVE. Sur Sarnois elles pesaient 46 objets.

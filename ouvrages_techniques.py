@@ -89,7 +89,11 @@ GABARITS = {
     "pdl": dict(L=12.0, l=3.0, h=3.0),        # poste de livraison + transfo
     "ptr": dict(L=10.0, l=3.0, h=3.0),        # transformation seule
     "local": dict(L=6.06, l=2.44, h=2.59),    # conteneur 20 pieds
-    "citerne": dict(L=11.7, l=8.9, h=1.50),   # reserve souple ~120 m3
+    # Catalogue UNITe, ligne « Citerne incendie — 120 » : 11,7 x 9,3 x 1 m,
+    # 104 m2. La valeur portee ici jusqu'au 30/09/2026 — 11,7 x 8,9 x 1,50 —
+    # melangeait l'empreinte de la 120 et la hauteur de la 60. Le contrat fait
+    # desormais voyager le catalogue, qui tranche empreinte par empreinte.
+    "citerne": dict(L=11.7, l=9.3, h=1.00),   # reserve souple 120 m3
     "portail": dict(L=7.0, h=2.0),
     # Tableau bilan AUZ V3, feuille « Batteries de stockage » : « Conteneur
     # 20 pieds (6x3x3m) ». Le plan le confirme au centimetre — le bloc
@@ -107,12 +111,22 @@ GABARITS = {
 #: contour aplati mesure 11,70 x 9,32 m sur les deux plans qui en portent une,
 #: soit le gabarit `citerne` — 104 m2 au bilan — au centimetre sur la longueur.
 #: C'est donc la meme bache que celle du SDIS, a un autre usage.
+#: ⚠️ LA « ZONE DE REMISE » EST UN VOLUME, ET JE L'AI CRUE PLATE.
+#: Le 24/09/2026, faute de source, j'avais tranche pour une aire durcie : le
+#: tableau bilan la compte en SURFACE (36 m2) la ou il compte les conteneurs en
+#: NOMBRE. Le catalogue UNITe, arrive le 30/09/2026 avec le contrat de
+#: Saint-Cyr IND07, dit « Zone de remise, 12 x 3 x 3m, longueur x largeur x
+#: HAUTEUR ». Il porte dix-sept ouvrages et une seule ligne y est sans
+#: hauteur — « Aire d'aspiration », `8 x 4 m` — donc la distinction est
+#: deliberee et machine-lisible. C'est 12 x 3 m, soit l'empreinte d'un
+#: conteneur 40 pieds, haut de 3 m.
 MONTAGE = {
     "pdl": "poste",
     "local": "conteneur",
     "sdis": "citerne",
     "bess": "bess",
     "refroidissement": "citerne",
+    "remise": "conteneur",
 }
 
 #: Part de l'aire du plus grand contour d'une couche de citernes au-dessous de
@@ -136,17 +150,15 @@ TOL_PIVOT = 0.35
 #: Largeurs plausibles d'un portail, en metres.
 PORTAIL_MIN, PORTAIL_MAX = 2.0, 12.0
 
+#: Marge, en metres, sous la plus etroite largeur cotee. Un plan dessine a
+#: quelques centimetres pres ; a Saint-Cyr le poste ressort a 3,00 m pile pour
+#: 3 m cotes, et les bandes ecartees font 1,50 et 1,00 m — le seuil coupe au
+#: milieu d'un fosse d'un facteur deux.
+TOL_LARGEUR = 0.30
+
 #: Categories du plan qui sont des SURFACES DURES : elles se rendent telles
 #: quelles, unies entre elles, et rien d'autre ne pose de grave.
-#: La « zone de remise » du BESS en fait partie : 12,01 x 3,00 m sur les trois
-#: plans qui en portent une, 36 m2 comptes au bilan — et comptes en SURFACE, la
-#: ou les conteneurs y sont comptes en NOMBRE. C'est l'aire durcie ou l'on pose
-#: un conteneur a la grue, pas un conteneur de plus.
-#:
-#: ⚠️ Le doute subsiste et il est assume dans ce sens-la : monter un volume de
-#: 3 m de haut qui n'existe pas se voit sur un photomontage, poser une dalle
-#: plate la ou le sol est nu ne se voit a aucune distance utile.
-SURFACES = ("piste", "plateforme", "voirie", "remise")
+SURFACES = ("piste", "plateforme", "voirie")
 
 #: Surelevation des surfaces dures, en metres. Posees au ras du terrain, elles
 #: disparaitraient dans le bruit du capteur d'ombre et leur bord ne se lirait
@@ -221,30 +233,108 @@ def rectangle_mini(pts):
     return (float(centre[0]), float(centre[1])), cap, float(L), float(l)
 
 
-def _cotes(parametres, cle, gabarit, mesure=None):
-    """Cotes d'un ouvrage : le plan d'abord, le bilan ensuite, le gabarit enfin.
+def catalogue(parametres):
+    """Les ouvrages cotes du contrat, lus en (nom, longueur, largeur, hauteur).
 
-    `mesure` est le (L, l) releve sur le polygone du plan, quand il y en a un.
-    La HAUTEUR ne s'y lit jamais — un plan est une vue de dessus — et vient
-    donc toujours du bilan ou du gabarit.
+    C'est le catalogue UNITe, que `generateur-dp` fait voyager avec le contrat
+    sous `cotes_normalisees` — dix-sept lignes sur celui de Saint-Cyr IND07.
+    Il fait autorite sur les HAUTEURS, qu'un plan en vue de dessus ne porte
+    jamais.
+
+    ⚠️ `ordre_cotes` DONNE LE SENS DE CHAQUE NOMBRE, et il change d'une ligne a
+    l'autre : « largeur x longueur x hauteur » pour le PTR, « longueur x
+    largeur x hauteur » pour le PDL. C'est lui qui fait foi, jamais la position
+    dans la chaine. Un poste de 12 x 3 dessine 3 x 12 se dessine parfaitement
+    et ne se voit pas.
+
+    ⚠️ UNE LIGNE SANS HAUTEUR EST UNE SURFACE, et c'est la seule facon
+    machine-lisible de les distinguer. Sur les dix-sept lignes du catalogue,
+    une seule n'en porte pas : « Aire d'aspiration », `8 x 4 m`,
+    `ordre_cotes = "longueur x largeur"`. Toutes les autres en ont une — y
+    compris la « Zone de remise » (12 x 3 x 3) et le « Bac de retention »
+    (17,5 x 3 x 2,3), que j'avais pris pour des ouvrages de sol faute de cette
+    source. La hauteur vaut alors None.
     """
-    h = gabarit.get("h", 3.0)
+    out = []
     for ligne in (parametres or {}).get("cotes_normalisees") or []:
-        nom = str(ligne.get("ouvrage", "")).lower()
-        if cle not in nom.replace("-", " ").replace("_", " "):
-            continue
         ordre = [m.strip() for m in
                  str(ligne.get("ordre_cotes", "")).lower().split("x")]
         nombres = [float(x.replace(",", "."))
                    for x in re.findall(r"\d+(?:[.,]\d+)?",
                                        str(ligne.get("dimensions", "")))]
+        # « 1 conteneur 20 pieds 6 x 3 x 3m » : les cotes sont les DERNIERS
+        # nombres, le compte et le calibre du conteneur les precedent.
+        if len(nombres) > len(ordre):
+            nombres = nombres[-len(ordre):]
         if len(ordre) != len(nombres) or not nombres:
             continue
         d = dict(zip(ordre, nombres))
-        h = d.get("hauteur", h)
+        if "longueur" not in d or "largeur" not in d:
+            continue
+        out.append((str(ligne.get("ouvrage", "")), d["longueur"], d["largeur"],
+                    d.get("hauteur")))
+    return out
+
+
+def largeur_mini(parametres):
+    """Largeur du plus etroit ouvrage cote. En dessous, ce n'est pas un ouvrage.
+
+    ⚠️ CE QUI REPARE LES TROIS POSTES EMPILES DE SAINT-CYR. La couche `UNI_PDL`
+    y porte trois bandes ACCOLEES, de meme cap, larges de 3,00 / 1,50 / 1,00 m
+    — un bloc de 12,00 x 5,50 m pose sur une plateforme de 131,4 m2, soit le
+    `surface_plateforme_m2 = 132` que le catalogue donne au PDL/PTR. La
+    nidification n'y peut rien : les trois bandes ne se recouvrent pas du tout.
+
+    Une seule des trois, 12,00 x 3,00 = 36 m2, est un ouvrage du catalogue.
+    Les deux autres ne peuvent en etre aucun : LA PLUS ETROITE LARGEUR DECLAREE
+    EST 3 m. Le seuil ne se choisit donc pas, il se lit — et il vient avec le
+    contrat, donc il suit le catalogue s'il change.
+    """
+    l = [lg for _n, _L, lg, h in catalogue(parametres) if h is not None]
+    return min(l) if l else min(g["l"] for g in GABARITS.values() if "l" in g)
+
+
+def _cotes(parametres, cle, gabarit, mesure=None):
+    """Cotes d'un ouvrage : le plan d'abord, le catalogue ensuite, le gabarit enfin.
+
+    `mesure` est le (L, l) releve sur le polygone du plan, quand il y en a un.
+    La HAUTEUR ne s'y lit jamais — un plan est une vue de dessus — et vient
+    donc toujours du catalogue ou du gabarit.
+
+    ⚠️ LA HAUTEUR SE CHOISIT SUR L'EMPREINTE, PAS SUR LE NOM DE LA CATEGORIE.
+    Le catalogue porte quatre citernes incendie — 30, 60, 120 et 240 m3, de
+    7,95 x 4,44 x 1,3 a 10,4 x 18,5 x 1,6 m — et une citerne de
+    refroidissement. Chercher « citerne » par sous-chaine prenait la premiere
+    venue : a Saint-Cyr, ou le plan dessine 8,08 x 7,40 (la 60, haute de
+    1,50 m), cela pouvait donner la 120, haute de 1,00 m. Le plan, lui, dit
+    exactement laquelle c'est — par son empreinte.
+    """
+    h = gabarit.get("h", 3.0)
+    cat = catalogue(parametres)
+
+    if mesure is not None and cat:
+        Lm, lm = sorted(mesure, reverse=True)
+        best = None
+        for nom, L, lg, hh in cat:
+            if hh is None:                       # une surface n'a pas de volume
+                continue
+            a, b = sorted((L, lg), reverse=True)
+            ecart = math.hypot(a - Lm, b - lm)
+            if best is None or ecart < best[0]:
+                best = (ecart, hh, nom)
+        # Tolerance : un huitieme de la plus grande cote. Mesure a Saint-Cyr,
+        # la bache colle a 0,03 m de la « Citerne incendie — 60 » quand la
+        # deuxieme candidate est a 3,9 m.
+        if best and best[0] <= max(Lm, 1.0) / 8.0:
+            return dict(L=mesure[0], l=mesure[1], h=best[1])
+
+    for nom, L, lg, hh in cat:
+        n = nom.lower().replace("-", " ").replace("_", " ")
+        if cle not in n or hh is None:
+            continue
+        h = hh
         if mesure is None:
-            return dict(L=d.get("longueur", gabarit["L"]),
-                        l=d.get("largeur", gabarit["l"]), h=h)
+            return dict(L=L, l=lg, h=h)
         break
     if mesure is not None:
         return dict(L=mesure[0], l=mesure[1], h=h)
@@ -533,7 +623,7 @@ def ouvrages(scn, sol_abs, E0, N0, parametres=None, dmax=400.0, verbose=True):
     """
     import exporter_equipements as EE
 
-    blocs, ouvertures, compte = {}, [], {}
+    blocs, ouvertures, compte, ecartes = {}, [], {}, []
     # REGISTRE DE CE QUI EST MONTE, pour que `conformite` puisse confronter le
     # modele au plan sans le deviner. Chaque entree donne le trace du plan et
     # l'emprise reellement posee : une cote inventee ou une orientation prise
@@ -593,6 +683,13 @@ def ouvrages(scn, sol_abs, E0, N0, parametres=None, dmax=400.0, verbose=True):
             if rect is not None:
                 (E, N), ang, Lm, lm = rect
                 mesure = (Lm, lm)
+                # ⚠️ PLUS ETROIT QUE LE PLUS ETROIT DES OUVRAGES COTES : ce
+                # n'est pas un ouvrage. Voir `largeur_mini` — trois bandes
+                # accolees sur `UNI_PDL` a Saint-Cyr, 3,00 / 1,50 / 1,00 m,
+                # montees en trois postes empiles de 3 m de haut.
+                if min(Lm, lm) < largeur_mini(parametres) - TOL_LARGEUR:
+                    ecartes.append((couche, Lm, lm))
+                    continue
             else:
                 ang, mesure = _cap_cloture(scn, E, N), None
             z = sol_abs(E, N)
@@ -672,5 +769,11 @@ def ouvrages(scn, sol_abs, E0, N0, parametres=None, dmax=400.0, verbose=True):
     if verbose:
         detail = ", ".join(f"{n} {c}" for c, n in sorted(compte.items()))
         print(f"  ouvrages techniques : {detail or 'aucun dans la portee'}")
+        # ON NE JETTE JAMAIS EN SILENCE : un contour ecarte a tort ne se voit
+        # pas sur un rendu, c'est juste un ouvrage qui manque.
+        for couche, L, l in ecartes:
+            print(f"    ecarte : {couche or '(sans couche)'} {L:.2f} x {l:.2f} m"
+                  f" — plus etroit que le plus etroit ouvrage cote "
+                  f"({largeur_mini(parametres):.2f} m)")
     return ({k: v for k, v in blocs.items() if v["f"]}, ouvertures,
             registre)

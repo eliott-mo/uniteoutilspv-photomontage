@@ -247,6 +247,25 @@ clarté : un peuplier d'hiver au soleil est plus *clair* que le ciel (190 contre
 un ciel tient dans six niveaux de R−B (−104 à −98) là où le rideau d'arbres va de −82
 à −19.
 
+**Un module a deux faces, et un montage a de l'air devant lui.** Les tables de Saint-Cyr
+sont sorties à **0,062 fois la luminance du ciel**, quand les trente-sept photomontages
+livrés de la banque de références vont de 0,089 à 0,444 — sous le plancher de tout ce qui
+a été livré. Deux causes, mesurées séparément. Le verre était calé sur une vue à 78° où
+l'on voit la *face avant* ; ici l'incidence vaut 94°, donc **on voit le dos**, et Cycles y
+appliquait le même verre, qui ne réfléchit plus rien (0,062 → 0,083). Et il manquait la
+**perspective aérienne**, que la photo chiffre elle-même : végétation sombre à L ≈ 57 vers
+25 m, L ≈ 88 vers 400 m pour un ciel à 208, soit une portée d'extinction de 1 742 m
+(0,083 → **0,238**, dans la bande). La portée se déclare à la pose, parce que c'est une
+propriété du *jour* de la prise de vue ; absente, rien ne change.
+
+**Trois sources font le masque de premier plan, et en oublier une ne se voit pas comme un
+bug.** La ligne de garde pose la certitude géométrique ; la remontée l'étend le long des
+masses sombres qui la touchent ; les traits verticaux rattrapent ce que la luminance ne
+suit pas. Le premier montage de Saint-Cyr n'a composé qu'avec la première : le conifère,
+le mât et le buisson passaient tous sous les tables. Le mât ne dévie du ciel que de 15 à
+20 niveaux sur 2 à 3 colonnes — c'est la **forme**, longue devant sa largeur, qui le trie,
+jamais l'amplitude.
+
 **Le catalogue du contrat fait autorité sur les hauteurs, et sur elles seules.**
 `generateur-dp` fait voyager les dix-sept ouvrages cotés d'UNITe sous `cotes_normalisees`.
 Deux règles en sortent, qu'aucune autre source ne donnait. D'abord, **une ligne sans
@@ -385,13 +404,6 @@ du capteur. Les six sont détectées.
 - **Sur une vue rapprochée, le feuillage est hors domaine.** Les cartes font 18 à 40 cm :
   3 à 7 px à 180 m, mais jusqu'à 745 px à 1,7 m, où elles se lisent comme des plaques. Il
   faudrait une géométrie de feuille pour le premier mètre.
-- **Il n'y a pas de perspective aérienne au rendu**, et elle n'est pas négligeable. Mesuré
-  sur la photo de Saint-Cyr, qui se calibre elle-même : une végétation sombre passe de
-  L ≈ 57 à 25 m à L ≈ 88 à 400 m, soit **environ 20 % de ciel mêlé**. Appliqué aux tables,
-  entre 56 et 254 m, le rapport au ciel passerait de 0,083 à ~0,17 — c'est-à-dire dans la
-  bande des trente-sept photomontages livrés (0,089 à 0,444), là où il est aujourd'hui
-  *sous* leur plancher. Il faut une passe de profondeur depuis Blender et un mélange au
-  composite.
 - **La position GPS d'un téléphone vaut 5 à 10 m.** Négligeable à 100-400 m, déterminante
   quand la clôture passe à 3,8 m.
 - **Le bac de rétention n'est pas monté**, faute de géométrie. Le catalogue le cote

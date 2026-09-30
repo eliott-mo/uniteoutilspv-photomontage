@@ -163,6 +163,50 @@ def _module_deux_faces(base, rugosite, specular, dos, dos_rugosite=0.62):
     return m
 
 
+def _brumer_materiau(m, air):
+    """Mele de la LUMIERE D'AIR au materiau, en fonction de la distance.
+
+    ⚠️ CE QUI MANQUAIT, ET QUE LA PHOTO CHIFFRE ELLE-MEME. Un objet sombre
+    s'eclaircit avec la distance parce que l'air entre lui et l'objectif diffuse
+    de la lumiere. Mesure sur le cliche de Saint-Cyr, qui porte de la vegetation
+    sombre a plusieurs distances : L = 57 vers 25 m, L = 88 vers 400 m, pour un
+    ciel a 208. Soit une part d'air de (88-57)/(208-57) = 0,205 a 400 m, donc
+    une portee d'extinction de -400/ln(0,795) = 1 742 m.
+
+    Sans cela, les tables de Saint-Cyr ressortaient a 0,062 fois la luminance
+    du ciel, quand les trente-sept photomontages livres de la banque vont de
+    0,089 a 0,444. Le chef de projet a vu « trop sombre » avant la mesure.
+
+    LE MODELE EST CELUI DE BEER-LAMBERT, pas un fondu vers le blanc :
+    L = T.L_objet + (1-T).L_air avec T = exp(-d/portee). La part d'air est
+    portee par sommet dans l'attribut `brume`, et la couleur d'air est celle du
+    ciel de la PHOTO pres de l'horizon — c'est elle qui fait que le montage
+    reste dans la lumiere du jour ou il a ete pris.
+
+    ⚠️ ON NE BRUME PAS LE CAPTEUR D'OMBRE. Il n'est pas un objet : il porte les
+    ombres portees sur le sol reel, et les eclaircir les ferait disparaitre.
+    """
+    nt = m.node_tree
+    # ⚠️ ON CHERCHE LE NOEUD PAR SON TYPE, PAS PAR SON NOM. « Material Output »
+    # est le nom par defaut en anglais ; un materiau procedural peut le renommer,
+    # et la recherche par nom rendait alors None en silence — zero materiau brume
+    # sur vingt et un, sans la moindre erreur.
+    sortie = next((n for n in nt.nodes if n.type == "OUTPUT_MATERIAL"), None)
+    if sortie is None or not sortie.inputs["Surface"].links:
+        return False
+    source = sortie.inputs["Surface"].links[0].from_socket
+    att = nt.nodes.new("ShaderNodeAttribute")
+    att.attribute_name = "brume"
+    em = nt.nodes.new("ShaderNodeEmission")
+    em.inputs["Color"].default_value = (*[_srgb_lin(c) for c in air], 1.0)
+    mix = nt.nodes.new("ShaderNodeMixShader")
+    nt.links.new(att.outputs["Color"], mix.inputs["Fac"])
+    nt.links.new(source, mix.inputs[1])
+    nt.links.new(em.outputs["Emission"], mix.inputs[2])
+    nt.links.new(mix.outputs["Shader"], sortie.inputs["Surface"])
+    return True
+
+
 def _grillage(maille=0.20, fil=0.006):
     """Grillage rigide : opaque sur les fils, transparent entre eux.
 
@@ -303,6 +347,14 @@ def monter(scene, data, mats):
     # `seulement` sert au calage : on isole un materiau pour le mesurer sans que
     # la cloture ou la structure viennent polluer le masque.
     seulement = data.get("seulement")
+    br = data.get("brume") or {}
+    portee = float(br.get("portee_m") or 0.0)
+    air = tuple(br.get("couleur") or (200, 205, 212))
+    oeil = Vector(data.get("camera", {}).get("position") or (0.0, 0.0, 0.0))
+    if portee > 0:
+        faits = [n for n, m in mats.items() if _brumer_materiau(m, air)]
+        print(f"  brume : portee {portee:.0f} m, air {air}, "
+              f"{len(faits)}/{len(mats)} materiaux brumes")
     for bloc in data["objets"]:
         if not bloc["f"]:
             continue
@@ -312,6 +364,15 @@ def monter(scene, data, mats):
         me.from_pydata([Vector(v) for v in bloc["v"]], [], bloc["f"])
         me.validate()
         me.update()
+        if portee > 0 and bloc["materiau"] != "sol_ombre":
+            # ⚠️ LA BRUME SE CALCULE PAR SOMMET, pas par objet : une nappe de
+            # tables s'etire ici de 56 a 254 m, et une valeur unique par objet
+            # ferait une marche au lieu d'un fondu.
+            couleur = me.color_attributes.new("brume", "FLOAT_COLOR", "POINT")
+            for i, v in enumerate(me.vertices):
+                d = (Vector(v.co) - oeil).length
+                f = 1.0 - math.exp(-d / portee)
+                couleur.data[i].color = (f, f, f, 1.0)
         if bloc.get("uv"):
             couche = me.uv_layers.new(name="metres")
             for i, boucle in enumerate(me.loops):

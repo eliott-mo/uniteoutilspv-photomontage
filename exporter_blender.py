@@ -197,6 +197,28 @@ def geometrie_cloture(scn, sol_abs, E0, N0, dmax=300.0, ouvertures=()):
     return bois, grillage
 
 
+def _brume(pose, photo, bande=0.06):
+    """Bloc de brume pour la scene, ou None. La couleur d'air vient de la PHOTO.
+
+    ⚠️ LA LUMIERE D'AIR N'EST PAS UN GRIS CHOISI : c'est le ciel de cette
+    photo-la, pris juste AU-DESSUS de l'horizon, la ou il est le plus proche de
+    ce que voit un rayon rasant. Un gris fixe ferait virer le montage des que
+    le temps change, et c'est precisement ce qu'une brume doit suivre.
+    """
+    b = pose.get("brume")
+    if not b or not b.get("portee_m"):
+        return None
+    couleur = b.get("couleur")
+    if couleur is None:
+        a = np.asarray(Image.open(photo).convert("RGB"), float)
+        H = a.shape[0]
+        y = int(np.clip(pose.get("horizon", H / 2), 0, H - 1))
+        h = max(2, int(bande * H))
+        bandeau = a[max(0, y - h):max(1, y), :, :]
+        couleur = [float(np.median(bandeau[..., i])) for i in range(3)]
+    return {"portee_m": float(b["portee_m"]), "couleur": couleur}
+
+
 def couleur_du_sol(chemin_photo, horizon, bande=0.18):
     """Teinte du sol du site, relevee sur la photo SOUS l'horizon.
 
@@ -741,6 +763,14 @@ def exporter(num, sortie, pose=None, scn=None, dossier=None):
         "registre": registre,
         "soleil": pose.get("soleil"),          # None si la photo n'a pas de date
         "ciel": pose.get("ciel_rgb", [135, 156, 173]),
+        # PERSPECTIVE AERIENNE. Declaree a la pose, parce que la portee
+        # d'extinction est une propriete du JOUR ou la photo a ete prise, et
+        # qu'elle se mesure sur cette photo-la : prendre deux masses sombres de
+        # meme nature a deux distances connues, et resoudre
+        # portee = -d / ln(1 - (L_loin - L_proche) / (L_ciel - L_proche)).
+        # Sur Saint-Cyr, 57 a 25 m et 88 a 400 m pour un ciel a 208 donnent
+        # 1 742 m. Absente, il n'y a pas de brume et rien ne change.
+        "brume": _brume(pose, _photo),
         # teinte du feuillage prise sur la photo elle-meme
         "materiaux": {"herbe_rgb": couleur_du_sol(
                           Path(dossier) / pose["photo"], pose["horizon"]),

@@ -745,3 +745,119 @@ if __name__ == "__main__":
     m = masque(photo, p, d_min)
     Image.fromarray((m * 255).astype(np.uint8)).save(sortie)
     print(f"ecrit : {sortie}")
+
+
+#: Largeur maximale, en pixels, d'un TRAIT VERTICAL de premier plan. Au-dela,
+#: ce n'est plus un mat ni un piquet mais une masse, que la remontee traite.
+#: Le mat de Saint-Cyr fait 3 px de large sur une image de 1224.
+TRAIT_LARGEUR_MAX = 0.010
+
+#: Ecart de luminance au ciel lisse, au-dela duquel un pixel n'est plus du ciel.
+#: Le ciel est LISSE HORIZONTALEMENT ; c'est cette propriete qu'on exploite, et
+#: non une couleur, pour qu'un trait soit trouve qu'il soit sombre (un mat
+#: d'acier) ou clair (un cable eclaire). Le mat de Saint-Cyr ne devie que de 15
+#: a 20 niveaux : le seuil est donc bas, et c'est la FORME — long et fin — qui
+#: fait le tri, pas l'amplitude.
+TRAIT_ECART = 11.0
+
+
+def traits_verticaux(a, garde, largeur_max=TRAIT_LARGEUR_MAX,
+                     ecart=TRAIT_ECART, verbose=True):
+    """Mats, piquets et cables : ce qui perce la ligne d'horizon du ciel.
+
+    ⚠️ CE QUE LA REMONTEE PAR LA LUMINANCE NE PEUT PAS ATTRAPER. Elle monte
+    depuis la ligne de garde tant que le pixel reste sombre, et s'arrete au
+    premier passage au clair. Un mat se detache SUR LE CIEL : au-dessus de la
+    ligne d'arbres sa colonne redevient claire, et la remontee s'arrete net.
+    Mesure sur Saint-Cyr : le mat culmine a y=330, la remontee s'arretait a
+    416 — 86 px de mat passes sous les tables, quand le conifere voisin ne
+    manquait que de 8 px.
+
+    L'IDEE : LE CIEL EST LISSE HORIZONTALEMENT, et on ne cherche QUE dans le
+    ciel. Une nuee varie sur des centaines de pixels ; un mat casse cette
+    regularite sur trois. Une premiere version cherchait sur toute l'image :
+    le mat y formait un seul amas avec la ligne d'arbres qu'il traverse, et se
+    faisait ecarter pour largeur. Au-dessus de cette ligne, il est SEUL.
+
+    C'EST LA FORME QUI TRIE, PAS L'AMPLITUDE. Le mat de Saint-Cyr ne devie que
+    de 15 a 20 niveaux sur 2 a 3 colonnes — `silhouette_ciel` ne le voit meme
+    pas. A ce niveau, un seuil d'amplitude attraperait le grain du nuage. On
+    retient donc ce qui est LONG devant sa largeur, ce qu'une tache de nuage
+    n'est jamais, et ce qui DESCEND jusqu'au bas du ciel : un objet qui flotte
+    au milieu du ciel n'est pas ancre au sol.
+    """
+    H, W = a.shape[:2]
+    vg = int(np.clip(garde, 1, H - 1))
+    sil = np.asarray(silhouette_ciel(a), float)
+    lum = a.astype(float).mean(axis=2)
+
+    # ON NE CHERCHE QUE DANS LE CIEL, et c'est tout le point. Sous la ligne
+    # d'arbres, le mat se confond avec elle en un seul amas, qu'on ecarte alors
+    # pour largeur. Au-dessus, il est SEUL sur un fond lisse.
+    dans_ciel = np.zeros((H, W), bool)
+    for x in range(W):
+        dans_ciel[:max(0, int(sil[x]) - 2), x] = True
+
+    fond = ndimage.median_filter(lum, size=(1, max(9, int(round(0.05 * W)) | 1)))
+    suspect = dans_ciel & (np.abs(lum - fond) > ecart)
+    suspect = ndimage.binary_closing(suspect, np.ones((9, 1), bool))
+
+    m = np.zeros((H, W), bool)
+    gardes, larges, courts = 0, 0, 0
+    lab, n = ndimage.label(suspect, np.ones((3, 3), bool))
+    for i, tr in enumerate(ndimage.find_objects(lab), start=1):
+        ys, xs = tr
+        w = xs.stop - xs.start
+        haut = ys.stop - ys.start
+        if w > largeur_max * W:
+            larges += 1
+            continue
+        # Un trait est LONG devant sa largeur : c'est ce qui le separe d'une
+        # tache de nuage, qui est ronde. Et il doit toucher le bas du ciel,
+        # sinon il flotte et ne peut pas etre ancre au sol.
+        if haut < 3 * max(w, 1) or ys.stop < int(np.median(sil[xs])) - 12:
+            courts += 1
+            continue
+        for x in range(xs.start, xs.stop):
+            m[ys.start:vg, x] = True
+        gardes += 1
+    if verbose:
+        print(f"  traits verticaux : {gardes} retenu(s), {larges} trop large(s), "
+              f"{courts} trop court(s) ou flottant(s)")
+    return m.astype(float)
+
+
+def masque_complet(photo, rendu, verbose=True, **kw):
+    """Le masque de premier plan ENTIER : garde, remontee et traits.
+
+    Les trois sources se completent et aucune ne remplace les autres :
+
+      - `masque_sous_rendu` pose la certitude geometrique — tout ce qui est
+        sous le pied du plus proche ouvrage rendu est devant ;
+      - `masque_remontant` etend cette certitude VERS LE HAUT le long des
+        masses sombres qui la touchent : haies, buissons, arbres proches ;
+      - `traits_verticaux` rattrape ce que la luminance ne suit pas, les mats
+        et les cables qui se detachent sur le ciel.
+
+    ⚠️ LES TROIS SONT NECESSAIRES, et l'oubli ne se voit pas comme un bug. Le
+    premier montage de Saint-Cyr n'a compose qu'avec le premier : le conifere,
+    le mat et le buisson passaient tous sous les tables. Le chef de projet l'a
+    vu ; aucun controle ne l'aurait dit.
+    """
+    a = np.asarray(Image.open(photo).convert("RGB"), float)
+    H, W = a.shape[:2]
+    ligne = garde_depuis_rendu(rendu)
+    g = float(np.nanmedian(ligne)) if np.isfinite(ligne).any() else H - 1
+    m = masque_sous_rendu(rendu, **kw)
+    if m.shape != (H, W):
+        m = np.asarray(Image.fromarray((m * 255).astype(np.uint8))
+                       .resize((W, H), Image.BILINEAR), float) / 255.0
+    r = masque_remontant(a, [(0, W)], g, (0, H), verbose=verbose)
+    t = traits_verticaux(a, g, verbose=verbose)
+    tot = np.clip(m + r + t, 0.0, 1.0)
+    if verbose:
+        print(f"  masque complet : garde {100*(m>.5).mean():.1f} %, "
+              f"remontee +{100*((r>.5)&(m<=.5)).mean():.1f} %, "
+              f"traits +{100*((t>.5)&(m<=.5)&(r<=.5)).mean():.2f} % "
+              f"-> {100*(tot>.5).mean():.1f} % de l'image")
+    return ndimage.gaussian_filter(tot, ADOUCI)

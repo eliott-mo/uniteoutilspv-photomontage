@@ -263,8 +263,17 @@ bug.** La ligne de garde pose la certitude géométrique ; la remontée l'étend
 masses sombres qui la touchent ; les traits verticaux rattrapent ce que la luminance ne
 suit pas. Le premier montage de Saint-Cyr n'a composé qu'avec la première : le conifère,
 le mât et le buisson passaient tous sous les tables. Le mât ne dévie du ciel que de 15 à
-20 niveaux sur 2 à 3 colonnes — c'est la **forme**, longue devant sa largeur, qui le trie,
-jamais l'amplitude.
+20 niveaux sur 2 à 3 colonnes — c'est la **forme** qui le trie, jamais l'amplitude : long
+devant sa largeur *et* haut d'au moins 4 % de l'image. Sans ce second critère, des
+brindilles de 6 à 13 px passaient et **découpaient des fentes claires dans le poste** rendu
+derrière elles. Et l'on masque la **largeur réelle**, pas la boîte englobante : le mât tient
+dans 10 colonnes pour une largeur médiane de 3.
+
+**Mais la remontée ne sait pas ce qui est devant la clôture.** Un buisson planté deux mètres
+*derrière* touche la ligne de garde autant qu'un arbre deux mètres devant — la photo ne
+porte aucune profondeur à cet endroit. À Saint-Cyr elle a masqué toute la haie quand trois
+objets seulement passent devant. Les plages de colonnes sont le jugement humain du module,
+et il est visible dans l'appel.
 
 **Le catalogue du contrat fait autorité sur les hauteurs, et sur elles seules.**
 `generateur-dp` fait voyager les dix-sept ouvrages cotés d'UNITe sous `cotes_normalisees`.

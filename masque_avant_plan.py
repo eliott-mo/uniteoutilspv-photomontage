@@ -760,6 +760,14 @@ TRAIT_LARGEUR_MAX = 0.010
 #: fait le tri, pas l'amplitude.
 TRAIT_ECART = 11.0
 
+#: Hauteur minimale d'un trait, en fraction de la hauteur d'image.
+#: ⚠️ LE CRITERE RELATIF NE SUFFIT PAS. « Long devant sa largeur » laissait
+#: passer des amas de 6 a 13 px de haut sur 1 a 2 de large : des brindilles de
+#: la cime lointaine, qui decoupaient alors des fentes claires dans le poste
+#: rendu derriere elles. Le mat de Saint-Cyr fait 40 px sur une image de 618,
+#: les brindilles moins de 13 : le seuil coupe au milieu d'un fosse de 3.
+TRAIT_HAUTEUR_MIN = 0.04
+
 
 def traits_verticaux(a, garde, largeur_max=TRAIT_LARGEUR_MAX,
                      ecart=TRAIT_ECART, verbose=True):
@@ -815,10 +823,23 @@ def traits_verticaux(a, garde, largeur_max=TRAIT_LARGEUR_MAX,
         # Un trait est LONG devant sa largeur : c'est ce qui le separe d'une
         # tache de nuage, qui est ronde. Et il doit toucher le bas du ciel,
         # sinon il flotte et ne peut pas etre ancre au sol.
-        if haut < 3 * max(w, 1) or ys.stop < int(np.median(sil[xs])) - 12:
+        if (haut < max(3 * max(w, 1), TRAIT_HAUTEUR_MIN * H)
+                or ys.stop < int(np.median(sil[xs])) - 12):
             courts += 1
             continue
-        for x in range(xs.start, xs.stop):
+        # ⚠️ ON MASQUE LA LARGEUR REELLE, PAS LA BOITE ENGLOBANTE. Le mat de
+        # Saint-Cyr tient dans une boite de 10 colonnes — le haubanage et le
+        # bruit l'elargissent — pour une largeur mediane de 3. Masquer la boite
+        # ouvrait dans les tables un trou trois fois trop large, que le chef de
+        # projet a vu. On garde les colonnes occupees sur au moins la moitie des
+        # lignes de l'amas, plus un pixel de marge de chaque cote.
+        bande = (lab[ys, xs] == i)
+        occupe = np.flatnonzero(bande.mean(axis=0) >= 0.5)
+        if not occupe.size:
+            occupe = np.flatnonzero(bande.any(axis=0))
+        x0 = xs.start + int(occupe.min()) - 1
+        x1 = xs.start + int(occupe.max()) + 2
+        for x in range(max(0, x0), min(W, x1)):
             m[ys.start:vg, x] = True
         gardes += 1
     if verbose:
@@ -827,7 +848,7 @@ def traits_verticaux(a, garde, largeur_max=TRAIT_LARGEUR_MAX,
     return m.astype(float)
 
 
-def masque_complet(photo, rendu, verbose=True, **kw):
+def masque_complet(photo, rendu, plages=None, verbose=True, **kw):
     """Le masque de premier plan ENTIER : garde, remontee et traits.
 
     Les trois sources se completent et aucune ne remplace les autres :
@@ -852,7 +873,18 @@ def masque_complet(photo, rendu, verbose=True, **kw):
     if m.shape != (H, W):
         m = np.asarray(Image.fromarray((m * 255).astype(np.uint8))
                        .resize((W, H), Image.BILINEAR), float) / 255.0
-    r = masque_remontant(a, [(0, W)], g, (0, H), verbose=verbose)
+    # ⚠️ LA REMONTEE NE SAIT PAS CE QUI EST DEVANT LA CLOTURE ET CE QUI EST
+    # DERRIERE. Elle monte le long de toute masse sombre qui touche la ligne de
+    # garde, et un buisson plante deux metres DERRIERE la cloture la touche
+    # autant qu'un arbre deux metres devant : la photo ne porte aucune
+    # profondeur a cet endroit. Sur Saint-Cyr elle a donc masque toute la haie,
+    # quand trois objets seulement passent devant.
+    #
+    # `plages` est le jugement humain du module, et il est visible dans
+    # l'appel : une liste d'intervalles de colonnes. Absent, on remonte sur
+    # toute la largeur — ce qui vaut pour une haie de bord franche, et se
+    # corrige en declarant.
+    r = masque_remontant(a, plages or [(0, W)], g, (0, H), verbose=verbose)
     t = traits_verticaux(a, g, verbose=verbose)
     tot = np.clip(m + r + t, 0.0, 1.0)
     if verbose:

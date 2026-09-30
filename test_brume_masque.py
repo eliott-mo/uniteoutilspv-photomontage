@@ -125,3 +125,55 @@ def test_le_masque_complet_additionne_les_trois(tmp_path, monkeypatch):
     f = _photo(tmp_path)
     MA.masque_complet(f, f, verbose=False)
     assert appels == ["garde", "remontee", "traits"]
+
+
+def test_une_brindille_de_cime_n_est_pas_un_trait():
+    """⚠️ CE QUI DECOUPAIT DES FENTES DANS LE POSTE LOINTAIN.
+
+    « Long devant sa largeur » laissait passer des amas de 6 a 13 px de haut
+    sur 1 a 2 de large — des brindilles de la cime lointaine — et le masque
+    ouvrait alors des fentes claires dans le poste rendu derriere elles. Cinq
+    faux sur huit amas retenus, vus par le chef de projet. Le mat fait 40 px
+    de haut sur une image de 618 : le seuil coupe au milieu d'un fosse de 3.
+    """
+    a = _ciel_avec([])
+    a[368:378, 600:602] = 182               # brindille de 10 px, collee au ciel bas
+    assert MA.traits_verticaux(a, 431, verbose=False).max() < 0.5
+
+
+def test_le_masque_suit_la_largeur_reelle_pas_la_boite():
+    """Le mat de Saint-Cyr tient dans une boite de 10 colonnes — haubanage et
+    bruit l'elargissent — pour une largeur mediane de 3. Masquer la boite
+    ouvrait dans les tables un trou trois fois trop large."""
+    a = _ciel_avec([(878, 881, 330)])
+    a[332, 872] = 182                       # un pixel de bruit, loin du mat
+    a[334, 888] = 182
+    m = MA.traits_verticaux(a, 431, verbose=False)
+    larges = (m[400] > 0.5).sum()
+    assert larges <= 6, f"{larges} colonnes masquees pour un mat de 3 px"
+    assert m[400, 879] > 0.5
+
+
+def test_les_plages_bornent_la_remontee(tmp_path, monkeypatch):
+    """⚠️ LA REMONTEE NE SAIT PAS CE QUI EST DEVANT LA CLOTURE.
+
+    Un buisson plante deux metres DERRIERE la touche autant qu'un arbre deux
+    metres devant : la photo ne porte aucune profondeur a cet endroit. Sur
+    Saint-Cyr elle a masque toute la haie, quand trois objets seulement passent
+    devant. Les plages sont le jugement humain, et il est visible dans l'appel.
+    """
+    vues = []
+    monkeypatch.setattr(MA, "masque_sous_rendu",
+                        lambda *a, **k: np.zeros((618, 1224)))
+    monkeypatch.setattr(MA, "garde_depuis_rendu",
+                        lambda *a, **k: np.full(1224, 431.0))
+    monkeypatch.setattr(MA, "traits_verticaux",
+                        lambda *a, **k: np.zeros((618, 1224)))
+    monkeypatch.setattr(MA, "masque_remontant",
+                        lambda a, plages, *r, **k: vues.append(plages)
+                        or np.zeros((618, 1224)))
+    f = _photo(tmp_path)
+    MA.masque_complet(f, f, verbose=False)
+    assert vues[-1] == [(0, 1224)], "sans declaration, toute la largeur"
+    MA.masque_complet(f, f, plages=[(350, 405), (862, 895)], verbose=False)
+    assert vues[-1] == [(350, 405), (862, 895)]

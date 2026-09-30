@@ -62,6 +62,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+import camera
 import dossiers
 import lecture_contrat
 import preparer_vue
@@ -158,7 +159,7 @@ def point_du_rapport(rapport, nom_photo, exiger=False):
 
 def preparer(plan, photo, sortie, azimut=None, tangage=0.0, roulis=0.0,
              hauteur_oeil=1.60, rogner_bas=0, titre=None, rapport=None,
-             vue=None, verbose=True):
+             vue=None, eq35=None, verbose=True):
     """Ecrit la page de calage. Rend le dictionnaire de depart.
 
     `plan` est un DXF ou un dossier de contrat, indifferemment.
@@ -167,11 +168,23 @@ def preparer(plan, photo, sortie, azimut=None, tangage=0.0, roulis=0.0,
     """
     scn = lecture_contrat.lire_plan(plan, verbose=verbose)
     ex = preparer_vue.exif_photo(photo)
+    if ex["f_px"] is None and eq35 is not None:
+        # ⚠️ UNE FOCALE SUPPOSEE SE DECLARE, ELLE NE SE DEVINE PAS. Le modele
+        # de telephone la donne a 2 % pres, et la page permet ensuite de
+        # l'ajuster au curseur — ce qui la DETERMINE quand la position est
+        # tenue par ailleurs, la degenerescence ne jouant qu'entre focale et
+        # DISTANCE. Le sous-titre de la page porte la mention « supposee ».
+        ex["f35"] = float(eq35)
+        ex["f_px"] = camera.focale_px_depuis_exif(
+            ex["largeur"], ex["hauteur"], float(eq35))[0]
+        ex["f35_suppose"] = True
     if ex["f_px"] is None:
         raise ValueError(
             f"{Path(photo).name} n'a pas de focale EXIF. Une carte "
             f"photos-geoloc ne la porte pas non plus : elle reencode les "
-            f"photos sans metadonnees. Il faut le fichier SORTI DU TELEPHONE.")
+            f"photos sans metadonnees. Il faut le fichier SORTI DU TELEPHONE, "
+            f"ou declarer la focale avec --eq35 (le modele de telephone la "
+            f"donne a 2 % pres).")
 
     pt = (point_du_rapport(rapport, vue or photo, exiger=bool(vue))
           if rapport else None)
@@ -253,7 +266,9 @@ def preparer(plan, photo, sortie, azimut=None, tangage=0.0, roulis=0.0,
     sous_titre = (
         f"{ex['appareil']} &middot; {ex['largeur']}&times;{ex['hauteur']}"
         f"{' (recadr&eacute;e)' if ex['rognee'] else ' (format natif)'}"
-        f" &middot; {ex['f35']:.0f} mm &eacute;q. 35 &middot; {ex['horodatage']}"
+        f" &middot; {ex['f35']:.0f} mm &eacute;q. 35"
+        f"{' <b>SUPPOS&Eacute;E</b>' if ex.get('f35_suppose') else ''}"
+        f" &middot; {ex['horodatage']}"
         f"<br>GPS {lat:.6f}, {lon:.6f} &middot; sol "
         f"{mnt.altitude(est, nord):.1f} m NGF &middot; azimut de d&eacute;part "
         f"{depart['azimut']:.0f}&deg;"
@@ -320,6 +335,9 @@ def main():
     p.add_argument("--rapport",
                    help="carte photos-geoloc : sa position replacee et son "
                         "cap calibre priment sur l'EXIF")
+    p.add_argument("--eq35", type=float,
+                   help="focale equivalente 35 mm, quand l'EXIF ne la porte "
+                        "pas. A declarer d'apres le modele de telephone.")
     p.add_argument("--vue",
                    help="nom de l'entree DANS LA CARTE, quand le fichier "
                         "porte un autre nom. Refuse au lieu de retomber sur "
@@ -337,7 +355,7 @@ def main():
         p.error("donner PLAN PHOTO SORTIE, ou --projet NOM PHOTO")
     preparer(plan, photo, sortie, azimut=a.azimut, tangage=a.tangage,
              roulis=a.roulis, hauteur_oeil=a.oeil, rapport=rapport,
-             vue=a.vue, rogner_bas=a.rogner_bas, titre=a.titre)
+             vue=a.vue, eq35=a.eq35, rogner_bas=a.rogner_bas, titre=a.titre)
     return 0
 
 

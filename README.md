@@ -268,11 +268,18 @@ en valeurs d'affichage : la même mesure faite sur les octets de l'image a donn�
 où le calcul juste en donne 3 800 à 5 100 — un facteur trois, et un montage qui vire au
 gris. À 18 km, Saint-Cyr sort à **0,167**, dans la bande.
 
-**Et un ciel bleu diffus désature la peinture de moitié.** Le poste, monté en RAL 6003 —
+**Et un ciel bleu diffus désature TOUT de moitié — la peinture comme le sol.** Le poste, monté en RAL 6003 —
 saturation 0,333 — ressortait à 0,182 *avant toute brume*. Le dépôt notait déjà l'effet sur
 le bois sans l'appliquer aux peintures ; `materiaux_proc.saturer` écarte désormais la
 couleur de son gris à luminance constante. La photo donne la cible : sa végétation garde
 une saturation de 0,431 à 130 m contre 0,500 à 25 m — à ces distances, le chroma survit.
+
+⚠️ **Le même effet sur le sol du site a été pris pour une ombre.** L'herbe rendue sortait à
+(70, 75, 66) pour un sol réel photographié à (79, 80, 46) : la *luminance* est juste — 70
+contre 68 — mais le bleu monte de vingt points, et un vert-jaune sec devient un gris-vert.
+Posé à 72 % d'opacité sur la photo, cela se lit comme une bande d'ombre le long de la
+piste, alors que rien n'est assombri. Deux rendus de contrôle ont été nécessaires pour
+l'établir : sans le capteur d'ombre, la bande est toujours là.
 
 **Trois sources font le masque de premier plan, et en oublier une ne se voit pas comme un
 bug.** La ligne de garde pose la certitude géométrique ; la remontée l'étend le long des

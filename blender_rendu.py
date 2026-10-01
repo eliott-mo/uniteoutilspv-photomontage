@@ -329,12 +329,12 @@ def materiaux(reglages=None):
         # coeur de la haie : il ne sert plus qu'a boucher la vue au travers
         # MEME gain que les cartes : le coeur transparait entre elles, et
         # au gain par defaut il rendait un mur ocre sous un semis vert.
-        "haie": MP.feuillage("haie", tuple(r.get("haie_rgb", (96, 85, 52))),
+        "haie": MP.feuillage("haie", MP.saturer(r.get("haie_rgb", (96, 85, 52))),
                              r.get("trouee_haie", 0.30), 0.0,
                              r.get("gain_haie", MP.GAIN_FEUILLAGE)),
         # cartes de feuillage : c'est elles qui font la silhouette
         "feuillage": MP.feuillage_carte(
-            "feuillage", tuple(r.get("haie_rgb", (96, 85, 52))),
+            "feuillage", MP.saturer(r.get("haie_rgb", (96, 85, 52))),
             r.get("translucide", 0.30),
             r.get("gain_haie", MP.GAIN_FEUILLAGE),
             bool(r.get("atlas_feuilles", False))),
@@ -342,7 +342,13 @@ def materiaux(reglages=None):
         # "bois" existant est un acacia miel, juste pour un poteau de
         # cloture, faux pour un tronc de charme ou de noisetier.
         "branche": _mat("branche", (126, 114, 98), 0.90, 0.0, 0.0, 0.20),
-        "herbe": _mat_herbe(tuple(r.get("herbe_rgb", (104, 120, 74)))),
+        # ⚠️ LE SOL DU SITE AUSSI SE DESATURE, et c'est ce qui a ete pris pour
+        # une ombre le long de la piste. Mesure sur Saint-Cyr : l'herbe rendue
+        # sort a (70, 75, 66) pour un sol reel photographie a (79, 80, 46).
+        # La LUMINANCE est juste — 70 contre 68 — mais le bleu monte de vingt
+        # points, et un vert-jaune sec devient un gris-vert. Pose sur la photo,
+        # cela se lit comme une bande d'ombre, alors que rien n'est assombri.
+        "herbe": _mat_herbe(MP.saturer(r.get("herbe_rgb", (104, 120, 74)))),
         "sol_ombre": _mat("sol_ombre", (120, 130, 95), 0.95, 0.0),
     }
 
@@ -389,6 +395,16 @@ def monter(scene, data, mats):
         scene.collection.objects.link(ob)
         if bloc["materiau"] == "sol_ombre":
             ob.is_shadow_catcher = True          # invisible, mais recoit les ombres
+        elif bloc["materiau"] == "herbe":
+            # ⚠️ LE SOL DU SITE NE DOIT PAS SE FAIRE DE L'OMBRE A LUI-MEME.
+            # `herbe` est une nappe posee juste au-dessus du capteur d'ombre,
+            # pour remplacer la couverture du sol a l'interieur de l'enceinte.
+            # Laissee opaque aux rayons d'ombre, elle OCCULTE le ciel vu par le
+            # capteur, qui lit alors une ombre large et franche la ou il n'y a
+            # que du sol. Mesure sur Saint-Cyr, sans soleil declare : 35 a 47 %
+            # d'assombrissement sur toute la bande au pied des tables — le chef
+            # de projet l'a vu et a dit « si c'est une ombre, alors pas adapte ».
+            ob.visible_shadow = False
         objets.append(ob)
     return objets
 
@@ -417,7 +433,14 @@ def eclairer(scene, data):
     rampe = nt.nodes.new("ShaderNodeValToRGB")
     fond = nt.nodes.new("ShaderNodeBackground")
     nt.links.new(coord.outputs["Incoming"], sep.inputs["Vector"])
-    nt.links.new(sep.outputs["Z"], rampe.inputs["Fac"])
+    # Fac = (Z + 1) / 2 : le zenith tombe a 0, l'horizon a 0,5, le nadir a 1.
+    # La rampe peut alors decrire le CIEL ENTIER, et non le seul passage
+    # ciel/sol — voir la distribution ci-dessous.
+    demi = nt.nodes.new("ShaderNodeMath"); demi.operation = "MULTIPLY_ADD"
+    demi.inputs[1].default_value = 0.5
+    demi.inputs[2].default_value = 0.5
+    nt.links.new(sep.outputs["Z"], demi.inputs[0])
+    nt.links.new(demi.outputs["Value"], rampe.inputs["Fac"])
     nt.links.new(rampe.outputs["Color"], fond.inputs["Color"])
     nt.links.new(fond.outputs["Background"], sortie.inputs["Surface"])
     # Les couleurs echantillonnees sur la photo sont en sRGB ; Cycles travaille en
@@ -436,9 +459,32 @@ def eclairer(scene, data):
     # hemispheres sont echanges et les modules renvoient du ciel par en dessous.
     # Le Fac d'une rampe etant borne a [0, 1], tout le haut du monde tombe sur
     # l'element 0 ; la transition se place juste au-dessus de 0.
-    r.elements[0].position = 0.0
-    r.elements[0].color = (*ciel, 1.0)
-    r.elements[1].position = 0.05
+    # ⚠️ UN CIEL COUVERT N'EST PAS UNIFORME, ET C'EST CE QUI NOIRCISSAIT LE SOL.
+    #
+    # La voute etait d'une seule couleur au-dessus de l'horizon. Un ciel couvert
+    # reel suit la distribution CIE : L(theta) = L_zenith (1 + 2 cos theta) / 3,
+    # soit TROIS FOIS plus lumineux au zenith qu'a l'horizon. Or une rangee de
+    # tables, basse et lointaine, n'occulte qu'une mince bande AU RAS DE
+    # L'HORIZON — la part la plus sombre du ciel. Comptee a la valeur du zenith,
+    # son occultation est surestimee d'autant.
+    #
+    # Mesure sur Saint-Cyr, sans soleil declare : le capteur d'ombre assombrisait
+    # le sol de 35 a 47 % sur toute la bande au pied des tables. Le chef de
+    # projet l'a vu et a dit « si c'est une ombre, alors pas adapte ».
+    #
+    # LA CORRECTION EST A IRRADIANCE CONSTANTE, pour ne rien changer d'autre :
+    # l'eclairement d'une surface horizontale vaut 2.pi.L_z.7/18 pour le ciel CIE
+    # et pi.L_uniforme pour l'ancien. L'egalite donne L_z = 18/14 = 1,286 fois
+    # l'ancienne valeur, et L_horizon = L_z/3 = 0,429 fois. Les modules et les
+    # ouvrages gardent donc leur eclairement ; seule la bande d'horizon s'eteint.
+    r.elements[0].position = 0.0                      # zenith
+    r.elements[0].color = (*[c * 1.286 for c in ciel], 1.0)
+    for pos, k in ((0.25, 0.857), (0.40, 0.600)):     # (1 + 2 cos theta) / 3
+        e = r.elements.new(pos)
+        e.color = (*[c * k for c in ciel], 1.0)
+    e = r.elements.new(0.50)                          # horizon
+    e.color = (*[c * 0.429 for c in ciel], 1.0)
+    r.elements[1].position = 0.53                     # sol, transition courte
     r.elements[1].color = (*sol, 1.0)
     fond.inputs["Strength"].default_value = float(data.get("force_ciel", 1.0))
     scene.world = monde

@@ -241,3 +241,26 @@ def test_on_n_extrapole_pas_plus_loin_qu_on_a_vu():
     assert haut.size and bas.size
     derive = bas.mean() - haut.mean()
     assert derive < 0.30 * 2 * 58 + 4, f"derive de {derive:.0f} px, non bornee"
+
+
+# ------------------------------------------- la desaturation par le ciel bleu
+def test_saturer_garde_la_luminance():
+    """⚠️ ON ECARTE LA COULEUR DE SON GRIS, ON NE L'ECLAIRCIT PAS.
+
+    Un materiau qui change de clarte en meme temps que de chroma n'est plus
+    calable : la luminance est verrouillee par ailleurs, sur la banque de
+    references. Seul le caractere colore doit bouger.
+    """
+    import materiaux_proc as MP
+    for c in ((61, 69, 46), (106, 102, 63), (104, 130, 91)):
+        avant = 0.299*c[0] + 0.587*c[1] + 0.114*c[2]
+        s = MP.saturer(c)
+        apres = 0.299*s[0] + 0.587*s[1] + 0.114*s[2]
+        assert apres == pytest.approx(avant, abs=0.5)
+        assert max(s) - min(s) > max(c) - min(c), "le chroma doit augmenter"
+
+
+def test_un_gris_reste_gris():
+    """Sans chroma a ecarter, il n'y a rien a faire — et surtout pas inventer."""
+    import materiaux_proc as MP
+    assert MP.saturer((120, 120, 120)) == pytest.approx((120, 120, 120))

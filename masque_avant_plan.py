@@ -768,6 +768,14 @@ TRAIT_ECART = 11.0
 #: les brindilles moins de 13 : le seuil coupe au milieu d'un fosse de 3.
 TRAIT_HAUTEUR_MIN = 0.04
 
+#: Inclinaison maximale d'un trait sur la verticale, en degres.
+#: ⚠️ C'EST LA PENTE QUI A OUVERT UNE BANDE EN PLEIN MILIEU DES TABLES. Un amas
+#: de brindilles a 33 degres, large de 8,5 px, ajustait une droite qui derivait
+#: de 51 px en descendant jusqu'a la garde : le masque y tracait un coin pale
+#: en travers du projet. Le vrai mat de Saint-Cyr penche de 5 degres. Un pylone,
+#: un poteau, un cable tendu : tous sont proches de la verticale.
+TRAIT_PENTE_MAX_DEG = 20.0
+
 
 def traits_verticaux(a, garde, largeur_max=TRAIT_LARGEUR_MAX,
                      ecart=TRAIT_ECART, verbose=True):
@@ -811,7 +819,7 @@ def traits_verticaux(a, garde, largeur_max=TRAIT_LARGEUR_MAX,
     suspect = ndimage.binary_closing(suspect, np.ones((9, 1), bool))
 
     m = np.zeros((H, W), bool)
-    gardes, larges, courts = 0, 0, 0
+    gardes, larges, courts, penchees = 0, 0, 0, 0
     lab, n = ndimage.label(suspect, np.ones((3, 3), bool))
     for i, tr in enumerate(ndimage.find_objects(lab), start=1):
         ys, xs = tr
@@ -852,17 +860,25 @@ def traits_verticaux(a, garde, largeur_max=TRAIT_LARGEUR_MAX,
             a1, a0 = np.polyfit(lignes.astype(float), centres, 1)
         else:
             a1, a0 = 0.0, float(centres.mean())
+        if abs(a1) > math.tan(math.radians(TRAIT_PENTE_MAX_DEG)):
+            penchees += 1
+            continue
         # Largeur masquee : celle du trait, plus UN pixel de chaque cote pour
         # couvrir son anticrenelage. Le chef de projet avait releve un trou
         # trois fois trop large, quand on masquait la boite englobante.
         demi = max(1, int(math.ceil((w + 1) / 2)))
         for y in range(ys.start, vg):
-            cx = int(round(xs.start + a0 + a1 * (y - ys.start)))
+            # ⚠️ ON N'EXTRAPOLE PAS PLUS LOIN QUE CE QU'ON A VU. La droite vaut
+            # sur l'etendue de l'amas ; au-dela, elle devine. Un amas de 28 px
+            # de haut extrapole sur 381 derivait de 80 px. On prolonge donc
+            # d'au plus une hauteur d'amas, puis on descend tout droit.
+            k = min(y - ys.start, 2 * haut)
+            cx = int(round(xs.start + a0 + a1 * k))
             m[y, max(0, cx - demi):min(W, cx + demi + 1)] = True
         gardes += 1
     if verbose:
         print(f"  traits verticaux : {gardes} retenu(s), {larges} trop large(s), "
-              f"{courts} trop court(s) ou flottant(s)")
+              f"{courts} trop court(s) ou flottant(s), {penchees} trop penche(s)")
     return m.astype(float)
 
 

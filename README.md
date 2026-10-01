@@ -257,6 +257,12 @@ appliquait le même verre, qui ne réfléchit plus rien (0,062 → 0,083). Et il
 prise de vue, pas du site — soit en portée d'extinction, soit en `visibilite_km`, la
 grandeur météo courante (Koschmieder : portée = V / 3,912). Absente, rien ne change.
 
+⚠️ **Et elle se compare à la référence SUR LA MÊME GRANDEUR.** `charte_rendu` mesure
+`Lb[panneaux].mean()` — la moyenne sur toute la zone insérée. Mesurer, soi, les 40 % de
+pixels les plus sombres revient à ne regarder que la structure et les ombres : cela donnait
+0,167 là où la grandeur comparable vaut **0,231**, pour une médiane de référence à 0,266.
+Deux passes ont été dépensées à poursuivre un écart qui venait de la mesure.
+
 ⚠️ **Elle se mesure sur des luminances LINÉARISÉES.** Le mélange se fait en radiance, pas
 en valeurs d'affichage : la même mesure faite sur les octets de l'image a donné 1 742 m là
 où le calcul juste en donne 3 800 à 5 100 — un facteur trois, et un montage qui vire au

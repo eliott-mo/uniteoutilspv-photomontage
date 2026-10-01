@@ -201,3 +201,43 @@ def test_le_masque_suit_l_axe_d_un_mat_penche():
     assert haut.size and bas.size, "le mat doit etre masque en haut comme en bas"
     derive = bas.mean() - haut.mean()
     assert derive > 8, f"le masque ne suit pas l'inclinaison ({derive:.1f} px)"
+
+
+def test_un_amas_trop_penche_est_ecarte():
+    """⚠️ CE QUI A OUVERT UNE BANDE EN PLEIN MILIEU DES TABLES.
+
+    Un amas de brindilles a 33 degres de la verticale, large de 8,5 px,
+    ajustait une droite qui derivait de 51 px en descendant jusqu'a la garde :
+    le masque y tracait un coin pale en travers du projet. Le vrai mat de
+    Saint-Cyr penche de 5 degres ; un pylone, un poteau, un cable tendu sont
+    tous proches de la verticale.
+    """
+    H, W, garde = 618, 1224, 431
+    a = np.full((H, W, 3), 200, np.uint8); a[:, :, 2] = 215
+    a[380:garde] = 70
+    a[garde:] = 110
+    for y in range(340, 378):               # 33 degres : derive de 25 px
+        x = 600 + int(round((y - 340) * 0.65))
+        a[y, x:x + 3] = 182
+    assert MA.traits_verticaux(a.astype(float), garde, verbose=False).max() < 0.5
+
+
+def test_on_n_extrapole_pas_plus_loin_qu_on_a_vu():
+    """Un amas de 28 px de haut extrapole sur 381 derivait de 80 px.
+
+    La droite vaut sur l'etendue de l'amas ; au-dela, elle devine. On prolonge
+    d'au plus deux hauteurs d'amas, puis on descend tout droit.
+    """
+    H, W, garde = 618, 1224, 431
+    a = np.full((H, W, 3), 200, np.uint8); a[:, :, 2] = 215
+    a[200:garde] = 70                        # ciel bas : l'amas est tout en haut
+    a[garde:] = 110
+    for y in range(140, 198):
+        x = 300 + int(round((y - 140) * 0.30))
+        a[y, x:x + 3] = 182
+    m = MA.traits_verticaux(a.astype(float), garde, verbose=False)
+    haut = np.flatnonzero(m[145] > 0.5)
+    bas = np.flatnonzero(m[425] > 0.5)
+    assert haut.size and bas.size
+    derive = bas.mean() - haut.mean()
+    assert derive < 0.30 * 2 * 58 + 4, f"derive de {derive:.0f} px, non bornee"

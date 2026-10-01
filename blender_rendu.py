@@ -268,7 +268,13 @@ def materiaux(reglages=None):
     # d'aluminium. Voir `_module_deux_faces` — c'est ce qui manquait, et non un
     # reglage a pousser.
     r = dict(module_rugosite=0.80, module_specular=0.06,
-             module_base=(84, 74, 44), module_dos=(146, 146, 143),
+             # ⚠️ LE DOS D'UN MODULE DE CENTRALE EST BLANC. C'est un film
+             # polymere clair — Tedlar ou PET — et non un gris moyen : les
+             # modules « tout noir » a dos noir sont un produit de toiture
+             # residentielle, pas de centrale au sol. Mesure : a 146 les tables
+             # de Saint-Cyr restaient a 0,167 du ciel pour une mediane de
+             # reference a 0,266.
+             module_base=(84, 74, 44), module_dos=(206, 206, 201),
              acier_rugosite=0.58)
     r.update(reglages or {})
     return {

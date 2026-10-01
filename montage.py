@@ -746,3 +746,74 @@ if __name__ == "__main__":
     im, n = rendre(DOSSIER / pose["photo"], pose, DOSSIER / f"montage_PV{num}.jpg")
     print(f"montage_PV{num}.jpg  {im.size}  az {pose['azimut']}  f {pose['f_px']} px  "
           f"| sol repeint : {n} px")
+
+
+#: Hauteur du bandeau de credit, en fraction de la hauteur d'image.
+BANDEAU_CREDIT = 0.045
+
+
+def _police(taille):
+    from PIL import ImageFont
+    for nom in ("arial.ttf", "DejaVuSans.ttf", "LiberationSans-Regular.ttf"):
+        try:
+            return ImageFont.truetype(nom, taille)
+        except Exception:                                     # noqa: BLE001
+            continue
+    return None
+
+
+def _lignes(d, texte, police, large):
+    """Coupe le texte aux separateurs pour qu'il tienne dans `large`."""
+    mots = texte.split(" ")
+    out, cur = [], ""
+    for m in mots:
+        essai = f"{cur} {m}".strip()
+        if cur and d.textlength(essai, font=police) > large:
+            out.append(cur)
+            cur = m
+        else:
+            cur = essai
+    if cur:
+        out.append(cur)
+    return out
+
+
+def crediter(chemin, texte, sortie=None, hauteur=BANDEAU_CREDIT):
+    """Porte un credit lisible SOUS l'image, sans rien recouvrir.
+
+    ⚠️ POURQUOI CETTE FONCTION EXISTE. Un photomontage de concertation se montre
+    en public, et son fond n'est pas toujours de nous : une capture Street View,
+    une photo de tiers, une orthophoto IGN. La marque d'attribution du
+    detenteur ne s'efface pas — c'est precisement ce qu'elle est la pour
+    empecher — et la bonne reponse n'est pas de la gommer mais de CREDITER,
+    lisiblement, ce qui est d'ailleurs la condition d'un usage permis.
+
+    Le bandeau s'AJOUTE sous l'image au lieu de s'y incruster : il ne cache
+    aucun pixel du montage, et il se recadre d'un trait si la planche DP en a
+    besoin — la piece DP 6 attend des images de meme cadrage.
+
+    ⚠️ ET IL TIENT EN ENTIER, quitte a passer a la ligne. Tronque, un credit
+    n'en est plus un : il laisse voir la mention a moitie et donne l'impression
+    qu'on a voulu l'escamoter. Releve sur le premier essai de Saint-Cyr, ou
+    « ... non destine a » se coupait net au bord droit.
+    """
+    im = Image.open(chemin).convert("RGB")
+    marge = max(6, int(0.006 * im.width))
+    large = im.width - 2 * marge
+    h1 = max(14, int(round(hauteur * im.height)))
+    taille = max(9, int(h1 * 0.62))
+    sonde = ImageDraw.Draw(im)
+    police = _police(taille)
+    lignes = _lignes(sonde, texte, police, large)
+    interligne = int(round(taille * 1.30))
+    h = max(h1, interligne * len(lignes) + max(6, taille // 2))
+
+    out = Image.new("RGB", (im.width, im.height + h), (28, 30, 32))
+    out.paste(im, (0, 0))
+    d = ImageDraw.Draw(out)
+    y = im.height + (h - interligne * len(lignes)) // 2
+    for ligne in lignes:
+        d.text((marge, y), ligne, fill=(224, 226, 228), font=police)
+        y += interligne
+    out.save(sortie or chemin, quality=95)
+    return out.size

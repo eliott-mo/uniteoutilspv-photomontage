@@ -861,3 +861,60 @@ def _trouer(bloc, ouvertures):
 
 if __name__ == "__main__":
     exporter(sys.argv[1], sys.argv[2])
+
+
+#: Cotes de la plateforme sur pilotis, relevees sur la planche PC 5-1 HOCH de
+#: Perigny-la-Rose : debord devant le local pour l'acces, dalle de 0,30 m,
+#: garde-corps a 1,00 m.
+DEBORD_PLATEFORME = 0.80
+EPAISSEUR_DALLE = 0.30
+HAUTEUR_GARDE_CORPS = 1.00
+COTE_PILOTIS = 0.30
+
+
+def geometrie_plateforme(centre, angle, zsol, zdalle, L, l,
+                         debord=DEBORD_PLATEFORME, epaisseur=EPAISSEUR_DALLE,
+                         garde_corps=HAUTEUR_GARDE_CORPS, cote=COTE_PILOTIS):
+    """Dalle sur pilotis qui porte un local technique surELEVE.
+
+    ⚠️ POURQUOI ELLE EXISTE. Un local surELEVE sans rien dessous flotte, et le
+    defaut saute aux yeux la ou la surelevation, elle, ne se remarque pas. Sur
+    Saint-Cyr, le PPRI impose de mettre les locaux techniques hors d'eau : la
+    planche PC 5-1 de HOCH les pose sur une PLATEFORME SUR PILOTIS, plancher a
+    97,75 m NGF soit 0,30 m au-dessus des plus hautes eaux connues, avec
+    garde-corps et escalier d'acces exterieur.
+
+    Le choix des pilotis plutot que du remblai est lui-meme une contrainte du
+    PPRI — ne creer aucun remblai nouveau en zone inondable — et il se voit :
+    le volume sous la dalle reste traverse par les ecoulements de crue.
+
+    ⚠️ L'ESCALIER N'EST PAS MODELISE. A Saint-Cyr le poste est a 120 m et fait
+    dix pixels de haut ; une volee de marches y tiendrait dans deux pixels et
+    n'ajouterait que du bruit. Il faudra le faire le jour ou une vue passera a
+    moins de quarante metres d'un local surELEVE.
+
+    Rend (beton, acier) : la dalle et ses pilotis, puis le garde-corps.
+    """
+    beton, acier = {"v": [], "f": []}, {"v": [], "f": []}
+    Lp, lp = L + 2 * debord, l + 2 * debord
+    boite(beton, centre, angle, Lp, lp, zdalle - epaisseur, zdalle)
+
+    # pilotis : aux quatre angles, plus un au milieu des longs pans si la dalle
+    # les ecarte de plus de six metres — c'est la portee courante d'une poutre.
+    c, ex, ey, _ = _base(centre, angle, Lp, lp)
+    du, dv = Lp / 2 - cote, lp / 2 - cote
+    pieds = [(i * du, j * dv) for i in (-1, 1) for j in (-1, 1)]
+    if Lp > 6.0:
+        pieds += [(0.0, j * dv) for j in (-1, 1)]
+    for u, v in pieds:
+        boite(beton, c + ex * u + ey * v, angle, cote, cote,
+              zsol - 0.10, zdalle - epaisseur)
+
+    # garde-corps : une lisse haute et une basse, sur quatre montants d'angle.
+    for z in (zdalle + garde_corps, zdalle + garde_corps / 2):
+        boite(acier, centre, angle, Lp, lp, z - 0.025, z + 0.025)
+    for i in (-1, 1):
+        for j in (-1, 1):
+            boite(acier, c + ex * (Lp / 2 - 0.03) * i + ey * (lp / 2 - 0.03) * j,
+                  angle, 0.06, 0.06, zdalle, zdalle + garde_corps)
+    return beton, acier

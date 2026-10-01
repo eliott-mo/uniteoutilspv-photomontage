@@ -268,11 +268,29 @@ en valeurs d'affichage : la même mesure faite sur les octets de l'image a donn�
 où le calcul juste en donne 3 800 à 5 100 — un facteur trois, et un montage qui vire au
 gris. À 18 km, Saint-Cyr sort à **0,167**, dans la bande.
 
+**Un local technique peut être hors d'eau.** Le PPRI impose parfois de surélever les
+locaux au-dessus des plus hautes eaux connues — à Saint-Cyr, plancher à 0,30 m au-dessus
+des PHEC, soit **2 m au-dessus du terrain naturel** — et **le DXF ne le porte pas** : c'est
+une cote de la notice. Elle se déclare donc au projet (`surelevation_ouvrages_m`) et vaut
+zéro par défaut. Le même PPRI interdisant tout remblai nouveau en zone inondable, le local
+va sur une **plateforme sur pilotis**, pas sur une butte : sans elle il flotterait, et ce
+défaut-là saute aux yeux là où la surélévation, elle, ne se remarque pas. La citerne, que
+la planche montre *ancrée*, reste au sol.
+
 **Et un ciel bleu diffus désature TOUT de moitié — la peinture comme le sol.** Le poste, monté en RAL 6003 —
 saturation 0,333 — ressortait à 0,182 *avant toute brume*. Le dépôt notait déjà l'effet sur
 le bois sans l'appliquer aux peintures ; `materiaux_proc.saturer` écarte désormais la
 couleur de son gris à luminance constante. La photo donne la cible : sa végétation garde
 une saturation de 0,431 à 130 m contre 0,500 à 25 m — à ces distances, le chroma survit.
+
+⚠️ **Mais sur les peintures, c'était la CLARTÉ le vrai défaut.** Le poste ressortait à 0,18
+fois la luminance du ciel — 0,23 sur son décile le plus clair — quand un poste réel fourni
+en référence rend 0,696 de la sienne. Trois fois trop sombre : à cette échelle un vert
+olive sombre se lit comme une boîte noire. La cible n'est pas la photo de référence, qui
+est un gros plan en plein soleil, mais le cliché du site lui-même — sa végétation sombre y
+rend L = 52 à 69 vers 90-130 m, et un préfabriqué peint, dont le facteur de réflexion
+tourne autour de 10 %, doit s'y lire au moins aussi clair qu'un feuillage, qui en réfléchit
+5 à 8.
 
 ⚠️ **Le même effet sur le sol du site a été pris pour une ombre.** L'herbe rendue sortait à
 (70, 75, 66) pour un sol réel photographié à (79, 80, 46) : la *luminance* est juste — 70

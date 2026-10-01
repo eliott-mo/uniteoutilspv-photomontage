@@ -104,6 +104,37 @@ def _rgba(c):
 CHROMA_PEINTURE = 1.85
 
 
+#: Facteur de CLARTE applique aux peintures, en plus du chroma.
+#:
+#: ⚠️ LA TEINTE N'ETAIT PAS EN CAUSE, LA CLARTE SI. Le poste de Saint-Cyr
+#: ressortait du rendu a 0,18 fois la luminance du ciel — 0,23 sur son decile le
+#: plus clair — quand le poste REEL que le chef de projet a fourni en reference
+#: rend 0,696 de la sienne. Trois fois trop sombre, et a cette echelle un vert
+#: olive sombre se lit comme une boite noire : « on n'a pas un truc un peu vert
+#: olive plutot ? »
+#:
+#: La cible n'est pas la photo de reference, qui est un gros plan EN PLEIN
+#: SOLEIL. Elle est donnee par le cliche de Saint-Cyr lui-meme : sa vegetation
+#: sombre y rend L = 52 a 69 vers 90-130 m, et un prefabrique peint, dont le
+#: facteur de reflexion lumineuse tourne autour de 10 %, doit s'y lire au moins
+#: aussi clair qu'un feuillage sombre, qui en reflechit 5 a 8. D'ou une cible de
+#: 0,27 a 0,34 du ciel, soit x1,5 en luminance d'affichage et x2,4 en lineaire.
+#:
+#: 1,47 = 2,4^(1/2,2). Verification : RAL 6003 ainsi eclairci donne (90, 101, 68),
+#: a comparer aux (95, 105, 90) mesures sur le poste reel de la reference.
+CLARTE_PEINTURE = 1.47
+
+
+def peinture(c, chroma=CHROMA_PEINTURE, clarte=CLARTE_PEINTURE):
+    """Teinte d'une peinture, prete a etre rendue : chroma puis clarte.
+
+    Les deux corrections sont independantes et se mesurent separement — l'une
+    sur la saturation, l'autre sur le rapport au ciel — mais elles viennent du
+    meme endroit : un rendu sous ciel couvert diffus n'est pas un nuancier.
+    """
+    return _teinte(saturer(c, chroma), clarte)
+
+
 def saturer(c, k=CHROMA_PEINTURE):
     """Ecarte la couleur de son gris, a luminance constante.
 

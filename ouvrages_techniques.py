@@ -129,6 +129,11 @@ MONTAGE = {
     "remise": "conteneur",
 }
 
+#: Ouvrages que l'on SURELEVE quand le projet le declare. La citerne n'en est
+#: pas : la planche PC 5-1 de HOCH la montre « ancree » au sol, et une reserve
+#: souple posee sur une dalle sur pilotis n'aurait aucun sens.
+SURELEVABLES = ("poste", "conteneur", "bess")
+
 #: Part de l'aire du plus grand contour d'une couche de citernes au-dessous de
 #: laquelle un contour n'est plus une citerne mais le sol qui la borde.
 #:
@@ -630,6 +635,7 @@ def ouvrages(scn, sol_abs, E0, N0, parametres=None, dmax=400.0, verbose=True):
     # ailleurs s'y voit tout de suite.
     registre = []
 
+    surelevation = float((parametres or {}).get("surelevation_ouvrages_m") or 0.0)
     dur = surfaces(scn, sol_abs, E0, N0, dmax=dmax, verbose=verbose)
     if dur:
         blocs["grave"] = dur
@@ -693,6 +699,13 @@ def ouvrages(scn, sol_abs, E0, N0, parametres=None, dmax=400.0, verbose=True):
             else:
                 ang, mesure = _cap_cloture(scn, E, N), None
             z = sol_abs(E, N)
+            # ⚠️ HORS D'EAU : le PPRI impose parfois de surelever les locaux
+            # techniques. A Saint-Cyr le plancher est a 0,30 m au-dessus des
+            # plus hautes eaux connues, soit 2 m au-dessus du terrain naturel —
+            # et le DXF ne le porte pas, c'est une cote de la notice. Elle se
+            # declare donc au projet, et vaut zero par defaut.
+            hors_eau = surelevation if quoi in SURELEVABLES else 0.0
+            zdalle = z + hors_eau
 
             def _pose(nom, LL, ll):
                 t = math.radians(ang)
@@ -708,6 +721,11 @@ def ouvrages(scn, sol_abs, E0, N0, parametres=None, dmax=400.0, verbose=True):
                 cle = "pdl" if "pdl" in couche else "ptr"
                 g = _cotes(parametres, cle, GABARITS[cle], mesure)
                 geo = {"p": dict(centre=(E, N), angle=ang, L=g["L"], l=g["l"])}
+                if hors_eau > 0:
+                    dalle, garde = EE.geometrie_plateforme(
+                        (E, N), ang, z, zdalle, g["L"], g["l"])
+                    fusion("beton", dalle)
+                    fusion("acier", garde)
                 # LE TABLIER DE GRAVE EST ECARTE : il vaut 94,5 m2 pour un
                 # poste de 36, il n'est sur aucun trace du plan, et les trois
                 # postes etant a un metre l'un de l'autre, leurs tabliers se
@@ -715,7 +733,7 @@ def ouvrages(scn, sol_abs, E0, N0, parametres=None, dmax=400.0, verbose=True):
                 # postes y reposent a 100 %.
                 for cible, part in zip(
                         ("beton", None, "couvertine", "acier", "creux"),
-                        EE.geometrie_poste(geo, z, (E0, N0), cle="p")):
+                        EE.geometrie_poste(geo, zdalle, (E0, N0), cle="p")):
                     if cible:
                         fusion(cible, part)
                 compte["pdl"] = compte.get("pdl", 0) + 1
@@ -723,23 +741,34 @@ def ouvrages(scn, sol_abs, E0, N0, parametres=None, dmax=400.0, verbose=True):
 
             elif quoi == "conteneur":
                 g = _cotes(parametres, "local", GABARITS["local"], mesure)
+                if hors_eau > 0:
+                    dalle, garde = EE.geometrie_plateforme(
+                        (E, N), ang, z, zdalle, g["L"], g["l"])
+                    fusion("beton", dalle)
+                    fusion("acier", garde)
                 for cible, part in zip(
                         ("tole", "menuiserie", "coin", "creux"),
-                        EE.geometrie_conteneur((E, N), ang, z, g["L"], g["l"],
-                                               g["h"], bess=False,
+                        EE.geometrie_conteneur((E, N), ang, zdalle, g["L"],
+                                               g["l"], g["h"], bess=False,
                                                oeil=(E0, N0))):
                     fusion(cible, part)
                 compte["local"] = compte.get("local", 0) + 1
                 _pose("conteneur", g["L"], g["l"])
 
             elif quoi == "bess":
+                if hors_eau > 0:
+                    gg = _cotes(parametres, "bess", GABARITS["bess"], mesure)
+                    dalle, garde = EE.geometrie_plateforme(
+                        (E, N), ang, z, zdalle, gg["L"], gg["l"])
+                    fusion("beton", dalle)
+                    fusion("acier", garde)
                 # `bess=True` ajoute la grille de ventilation en pignon, qui
                 # est ce qui distingue a l'oeil un conteneur batterie d'un
                 # local de stockage — meme gabarit, meme bardage.
                 g = _cotes(parametres, "bess", GABARITS["bess"], mesure)
                 for cible, part in zip(
                         ("tole", "menuiserie", "coin", "creux"),
-                        EE.geometrie_conteneur((E, N), ang, z, g["L"], g["l"],
+                        EE.geometrie_conteneur((E, N), ang, zdalle, g["L"], g["l"],
                                                g["h"], bess=True,
                                                oeil=(E0, N0))):
                     fusion(cible, part)
@@ -768,7 +797,9 @@ def ouvrages(scn, sol_abs, E0, N0, parametres=None, dmax=400.0, verbose=True):
 
     if verbose:
         detail = ", ".join(f"{n} {c}" for c, n in sorted(compte.items()))
-        print(f"  ouvrages techniques : {detail or 'aucun dans la portee'}")
+        print(f"  ouvrages techniques : {detail or 'aucun dans la portee'}"
+              + (f" | SURELEVES de {surelevation:.2f} m sur plateforme "
+                 f"({', '.join(SURELEVABLES)})" if surelevation > 0 else ""))
         # ON NE JETTE JAMAIS EN SILENCE : un contour ecarte a tort ne se voit
         # pas sur un rendu, c'est juste un ouvrage qui manque.
         for couche, L, l in ecartes:
